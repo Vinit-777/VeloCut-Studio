@@ -1261,7 +1261,7 @@ def _kickoff_next_background_clip(run_id: str, source: str, clips, shown_count: 
 nvenc_ok = check_nvenc_available()
 
 with st.sidebar:
-    st.markdown('<div class="cp-side-brand">⚡ ClipPulse Studio Pro</div>', unsafe_allow_html=True)
+    st.markdown('<div class="cp-side-brand">⚡ ClipPulse Studio</div>', unsafe_allow_html=True)
 
     with st.container():
         st.markdown('<div class="side-section">Clip Duration (Seconds)</div>', unsafe_allow_html=True)
@@ -1452,7 +1452,7 @@ with st.sidebar:
 st.markdown(
     """
     <div class="cp-top-banner">
-        <span class="cp-banner-pill">v4.0 Pro</span>
+        <span class="cp-banner-pill">AI Engine</span>
         <span><b>ClipPulse AI Engine Active</b> • 1 Long Video to 10 Ready-to-Post Viral Shorts in 1-Click • Whisper Turbo + Groq LPU</span>
     </div>
     <div class="cp-navbar">
@@ -1470,7 +1470,6 @@ st.markdown(
                 </defs>
             </svg>
             <div class="cp-wordmark">Clip<span>Pulse</span> <span style="font-size:0.95rem; font-weight:600; color:#94A3B8;">Studio</span></div>
-            <div class="cp-version-badge">v4.0 PRO</div>
         </div>
         <div class="cp-nav-status">
             <div class="cp-dot"></div>
