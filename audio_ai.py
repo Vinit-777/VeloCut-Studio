@@ -447,9 +447,9 @@ def _extract_heatmap_peak_clips(
         if any(abs(p_mid - prev["_mid"]) < min_spacing for prev in picked):
             continue
 
-        # Start ~5s BEFORE the replay spike so viewers catch the buildup + peak reaction!
-        clip_start = max(0.0, round(p_start - 5.0, 2))
-        clip_end = min(duration, round(clip_start + target_dur, 2))
+        # Start ~5.3s BEFORE the replay spike so viewers catch the buildup + peak reaction!
+        clip_start = max(0.0, round(p_start - 5.3, 2))
+        clip_end = min(duration, round(clip_start + target_dur + 0.45, 2))
         if clip_end - clip_start < 12.0:
             clip_start = max(0.0, round(clip_end - target_dur, 2))
 
@@ -721,7 +721,7 @@ def _find_clean_sentence_end(
 
     if punct_candidates:
         best = min(punct_candidates, key=lambda t: abs(t - target_dur))
-        return round(min(max_file_dur, best + 0.22), 2)
+        return round(min(max_file_dur, best + 0.45), 2)
 
     pause_candidates: List[float] = []
     for i, w in enumerate(words):
@@ -738,7 +738,7 @@ def _find_clean_sentence_end(
 
     if pause_candidates:
         best = min(pause_candidates, key=lambda t: abs(t - target_dur))
-        return round(min(max_file_dur, best + 0.22), 2)
+        return round(min(max_file_dur, best + 0.40), 2)
 
     return round(min(max_file_dur, target_dur), 2)
 
@@ -750,26 +750,43 @@ def convert_words_language(
     if not words or caption_lang == "native":
         return words
 
-    non_latin_count = sum(1 for w in words if _has_non_latin(w.get("word", "")))
-    if non_latin_count == 0 and caption_lang != "hinglish":
-        return words
-
     api_key = os.getenv("GROQ_API_KEY", "").strip()
-    raw_list = [str(w["word"]).strip() for w in words]
 
     if caption_lang == "hinglish":
-        if api_key and non_latin_count > 0:
+        non_latin_count = sum(1 for w in words if _has_non_latin(w.get("word", "")))
+        if non_latin_count == 0:
+            return words
+        if not api_key:
+            return [
+                {
+                    "word": _devanagari_to_hinglish_fallback(w["word"]),
+                    "start": w["start"],
+                    "end": w["end"],
+                }
+                for w in words
+            ]
+
+        # Chunk words in groups of up to 28 for guaranteed 1-to-1 indexed LLM translation
+        client = Groq(api_key=api_key)
+        chunk_size = 28
+        result_words: List[Dict[str, Any]] = []
+
+        for c_idx in range(0, len(words), chunk_size):
+            chunk = words[c_idx : c_idx + chunk_size]
+            input_dict = {str(i): str(w["word"]).strip() for i, w in enumerate(chunk)}
+
+            prompt = (
+                "Convert this numbered JSON dictionary of spoken Hindi/Devanagari words into natural "
+                "Indian Hinglish (clean Latin letters A-Z) for viral Instagram Reels / YouTube Shorts captions.\n"
+                "Rules:\n"
+                f"1. Return a JSON object with the EXACT same keys '0' through '{len(chunk) - 1}'.\n"
+                "2. Keep all English words in standard English spelling (e.g., 'college', 'technology', 'startup').\n"
+                "3. Convert Hindi/Devanagari words to popular colloquial Hinglish (e.g. 'yeh', 'hai', 'karega', 'nahi', 'toh', 'apna', 'dosto', 'kaise').\n"
+                "4. Fix obvious speech-to-text typos.\n\n"
+                f"INPUT:\n{json.dumps(input_dict, ensure_ascii=False)}"
+            )
+            converted_map: Dict[str, str] = {}
             try:
-                client = Groq(api_key=api_key)
-                prompt = (
-                    "Convert this exact word list from Hindi/Devanagari speech into crisp, readable "
-                    "Indian viral Instagram Reel HINGLISH (clean Latin letters A-Z). "
-                    "Fix obvious phonetic typos (e.g., 'af' -> 'of', 'studant' -> 'student', clear proper nouns), "
-                    "keep English words cleanly spelled, and use natural Hinglish ('यह' -> 'yeh', 'था' -> 'tha', "
-                    "'बच्चा' -> 'bachcha', 'लोगों' -> 'logon'). "
-                    f"CRITICAL: Return JSON {{\"words\": [...]}} with EXACTLY {len(raw_list)} items in the exact same order.\n\n"
-                    f"INPUT ({len(raw_list)} words):\n{json.dumps(raw_list, ensure_ascii=False)}"
-                )
                 comp = client.chat.completions.create(
                     model="openai/gpt-oss-20b",
                     messages=[{"role": "user", "content": prompt}],
@@ -778,39 +795,46 @@ def convert_words_language(
                     reasoning_effort="low",
                 )
                 parsed = json.loads(comp.choices[0].message.content)
-                converted = parsed.get("words", [])
-                if isinstance(converted, list) and len(converted) == len(words):
-                    return [
-                        {
-                            "word": _devanagari_to_hinglish_fallback(str(converted[i]).strip())
-                            if _has_non_latin(str(converted[i]))
-                            else str(converted[i]).strip(),
-                            "start": words[i]["start"],
-                            "end": words[i]["end"],
-                        }
-                        for i in range(len(words))
-                    ]
+                if isinstance(parsed, dict):
+                    converted_map = {str(k): str(v).strip() for k, v in parsed.items()}
             except Exception:
-                pass
+                converted_map = {}
 
-        return [
-            {
-                "word": _devanagari_to_hinglish_fallback(w["word"]),
-                "start": w["start"],
-                "end": w["end"],
-            }
-            for w in words
-        ]
+            for i, w in enumerate(chunk):
+                hw = converted_map.get(str(i), "").strip()
+                if not hw or _has_non_latin(hw):
+                    hw = _devanagari_to_hinglish_fallback(w["word"])
+                result_words.append({
+                    "word": hw,
+                    "start": w["start"],
+                    "end": w["end"],
+                })
+
+        return result_words
 
     if caption_lang == "english" and api_key:
         try:
             client = Groq(api_key=api_key)
-            full_sentence = " ".join(raw_list)
-            t0, t1 = words[0]["start"], words[-1]["end"]
+            # Group into natural phrases based on punctuation or silence gaps > 0.40s
+            phrases: List[List[Dict[str, Any]]] = []
+            curr_phrase: List[Dict[str, Any]] = []
+
+            for i, w in enumerate(words):
+                curr_phrase.append(w)
+                txt = str(w.get("word", "")).strip()
+                has_punct = bool(txt and txt[-1] in ".?!।")
+                is_gap = (i + 1 < len(words) and (words[i + 1]["start"] - w["end"]) >= 0.40)
+                is_long = len(curr_phrase) >= 12
+                if has_punct or is_gap or is_long or (i + 1 == len(words)):
+                    phrases.append(curr_phrase)
+                    curr_phrase = []
+
+            phrase_texts = {str(k): " ".join(str(w["word"]).strip() for w in p) for k, p in enumerate(phrases)}
             prompt = (
-                "Translate the following spoken clip transcript into punchy, natural short-form English "
-                "for Instagram Reels captions. Return JSON: {\"text\": \"...\"}\n\n"
-                f"TRANSCRIPT: {full_sentence}"
+                "Translate each numbered spoken phrase into punchy, natural conversational English "
+                "for short-form Instagram Reels / YouTube Shorts captions.\n"
+                f"Return a JSON object with the EXACT same keys '0' through '{len(phrases) - 1}': {{\"0\": \"...\", ...}}\n\n"
+                f"INPUT PHRASES:\n{json.dumps(phrase_texts, ensure_ascii=False)}"
             )
             comp = client.chat.completions.create(
                 model="openai/gpt-oss-20b",
@@ -819,18 +843,24 @@ def convert_words_language(
                 temperature=0.2,
                 reasoning_effort="low",
             )
-            en_text = str(json.loads(comp.choices[0].message.content).get("text", "")).strip()
-            en_tokens = en_text.split()
-            if en_tokens:
-                step = max(0.08, (t1 - t0) / len(en_tokens))
-                return [
-                    {
+            trans_map = json.loads(comp.choices[0].message.content)
+
+            en_words: List[Dict[str, Any]] = []
+            for k, p in enumerate(phrases):
+                en_sentence = str(trans_map.get(str(k), "")).strip()
+                tokens = en_sentence.split() if en_sentence else [w["word"] for w in p]
+                t_start = p[0]["start"]
+                t_end = p[-1]["end"]
+                dur = max(0.12, t_end - t_start)
+                step = dur / max(1, len(tokens))
+                for j, tok in enumerate(tokens):
+                    en_words.append({
                         "word": tok,
-                        "start": round(t0 + i * step, 3),
-                        "end": round(t0 + (i + 1) * step, 3),
-                    }
-                    for i, tok in enumerate(en_tokens)
-                ]
+                        "start": round(t_start + j * step, 3),
+                        "end": round(t_start + (j + 1) * step, 3),
+                    })
+            if en_words:
+                return en_words
         except Exception:
             pass
 
@@ -1090,21 +1120,25 @@ NUMBERED TRANSCRIPT:
             s_i = max(0, min(len(segments) - 1, int(s_id)))
             e_i = max(s_i, min(len(segments) - 1, int(e_id)))
             e_i = _extend_past_hanging_ending(segments, s_i, e_i, max_dur=max_dur)
-            start = float(segments[s_i]["start"])
-            end = float(segments[e_i]["end"])
-            while (end - start) < min_dur and e_i + 1 < len(segments):
+            raw_start = float(segments[s_i]["start"])
+            raw_end = float(segments[e_i]["end"])
+            while (raw_end - raw_start) < min_dur and e_i + 1 < len(segments):
                 e_i += 1
-                end = float(segments[e_i]["end"])
-            while (end - start) > max_dur + 18 and e_i > s_i:
+                raw_end = float(segments[e_i]["end"])
+            while (raw_end - raw_start) > max_dur + 18 and e_i > s_i:
                 e_i -= 1
-                end = float(segments[e_i]["end"])
+                raw_end = float(segments[e_i]["end"])
+            start = max(0.0, round(raw_start - 0.28, 2))
+            end = min(duration, round(raw_end + 0.45, 2))
         else:
-            start = max(0.0, float(c.get("start", 0.0)))
-            end = min(duration, float(c.get("end", start + min_dur)))
-            if end - start < min_dur:
-                end = min(duration, start + min_dur)
-            if end - start > max_dur + 15:
-                end = min(duration, start + max_dur)
+            raw_s = max(0.0, float(c.get("start", 0.0)))
+            raw_e = min(duration, float(c.get("end", raw_s + min_dur)))
+            if raw_e - raw_s < min_dur:
+                raw_e = min(duration, raw_s + min_dur)
+            if raw_e - raw_s > max_dur + 15:
+                raw_e = min(duration, raw_s + max_dur)
+            start = max(0.0, round(raw_s - 0.28, 2))
+            end = min(duration, round(raw_e + 0.45, 2))
 
         hook_score = float(np.clip(float(c.get("hook_score", 82)), 0, 100))
         coherence_score = float(np.clip(float(c.get("coherence_score", 82)), 0, 100))

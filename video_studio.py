@@ -237,8 +237,13 @@ def _ensure_template_font(font_filename: str, assets_dir: str = "assets") -> Opt
     return None
 
 
-def _get_unicode_fallback_font_path() -> Optional[Path]:
+def _get_unicode_fallback_font_path(assets_dir: str = "assets") -> Optional[Path]:
     for cand in [
+        Path(assets_dir) / "fonts" / "Poppins-ExtraBold.ttf",
+        Path("assets/fonts/Poppins-ExtraBold.ttf"),
+        Path("/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf"),
+        Path("/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf"),
+        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
         Path("C:/Windows/Fonts/NirmalaB.ttf"),
         Path("C:/Windows/Fonts/Nirmala.ttf"),
         Path("C:/Windows/Fonts/mangalb.ttf"),
@@ -1229,7 +1234,62 @@ def _render_wide_cinematic_frame(
 
 
 def _render_broll_blur_frame(frame: np.ndarray, out_w: int = 720, out_h: int = 1280) -> np.ndarray:
-    return _render_full_uncropped_frame(frame, (255, 255, 255), out_w, out_h)
+    """
+    Aesthetic Opus-style Blurred Canvas:
+    1. Background fills the full 9:16 vertical canvas (1280x720) with smooth cinematic blur & soft dimming.
+    2. Sharp original uncropped video frame centered with subtle drop shadow and clean borders.
+    """
+    src_h, src_w = frame.shape[:2]
+
+    # Background: scale to cover full vertical canvas
+    bg_scale = max(out_w / float(max(1, src_w)), out_h / float(max(1, src_h)))
+    bg_w = max(out_w, int(round(src_w * bg_scale)))
+    bg_h = max(out_h, int(round(src_h * bg_scale)))
+    bg_full = cv2.resize(frame, (bg_w, bg_h), interpolation=cv2.INTER_LINEAR)
+
+    # Center-crop to 9:16 (out_w x out_h)
+    bx0 = max(0, (bg_w - out_w) // 2)
+    by0 = max(0, (bg_h - out_h) // 2)
+    bg_crop = bg_full[by0 : by0 + out_h, bx0 : bx0 + out_w]
+    if bg_crop.shape[0] != out_h or bg_crop.shape[1] != out_w:
+        bg_crop = cv2.resize(bg_crop, (out_w, out_h))
+
+    # Downscale-blur-upscale for silky aesthetic Gaussian blur with high FPS
+    small_bg = cv2.resize(bg_crop, (120, 214), interpolation=cv2.INTER_AREA)
+    blurred_small = cv2.GaussianBlur(small_bg, (25, 25), 0)
+    canvas = cv2.resize(blurred_small, (out_w, out_h), interpolation=cv2.INTER_LINEAR)
+    # Dim background to 42% luminance so the center video, captions, and title card pop with great contrast
+    canvas = (canvas.astype(np.float32) * 0.42).astype(np.uint8)
+
+    # Foreground: 100% full uncropped width
+    scale = min(out_w / float(max(1, src_w)), (out_h * 0.65) / float(max(1, src_h)))
+    fg_w = max(32, min(out_w, int(round(src_w * scale))))
+    fg_h = max(32, min(out_h, int(round(src_h * scale))))
+    fg = _smart_resize(frame, (fg_w, fg_h))
+
+    fx0 = (out_w - fg_w) // 2
+    fy0 = max(180, int(round(490 - fg_h / 2.0)))
+    fy1 = min(out_h - 300, fy0 + fg_h)
+    if (fy1 - fy0) != fg_h:
+        fy0 = max(100, (out_h - fg_h) // 2)
+        fy1 = fy0 + fg_h
+
+    # Soft drop shadow above and below
+    for dy, d_a in [(-8, 0.18), (-6, 0.32), (-4, 0.52), (-2, 0.74), (fg_h + 1, 0.74), (fg_h + 3, 0.52), (fg_h + 5, 0.32), (fg_h + 7, 0.18)]:
+        yy = fy0 + dy
+        if 0 <= yy < out_h:
+            canvas[yy, :] = (canvas[yy, :].astype(np.float32) * (1.0 - d_a)).astype(np.uint8)
+
+    canvas[fy0:fy1, fx0 : fx0 + fg_w] = fg
+
+    # Crisp modern 1px studio border
+    border_color = (200, 200, 200)
+    if fy0 >= 1:
+        canvas[fy0 - 1 : fy0, fx0 : fx0 + fg_w] = border_color
+    if fy1 + 1 <= out_h:
+        canvas[fy1 : fy1 + 1, fx0 : fx0 + fg_w] = border_color
+
+    return canvas
 
 
 def _render_streamer_split_frame(
@@ -1574,11 +1634,10 @@ def render_viral_reel(
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     Path(temp_dir).mkdir(parents=True, exist_ok=True)
 
-    # STILL / STATIC FX GUARANTEE:
-    # Locks 100% full uncropped YouTube video frame + ZERO camera movement / zoom / wobble!
+    # User framing choice is strictly respected across all camera modes:
     is_still_static = (transition_style == "still_static")
-    effective_framing = "full_uncropped" if is_still_static else framing_mode
-    effective_zoom = False if (is_still_static or effective_framing == "full_uncropped") else dynamic_zoom
+    effective_framing = framing_mode
+    effective_zoom = False if (is_still_static or effective_framing in ("full_uncropped", "blurred_fill")) else dynamic_zoom
 
     seg_path = str(Path(temp_dir) / f"{Path(output_path).stem}_{uuid.uuid4().hex[:6]}_seg.mp4")
 
@@ -1595,7 +1654,7 @@ def render_viral_reel(
     )
     timings["clip_fetch_s"] = round(time.perf_counter() - t0, 2)
 
-    # 2. Fast 1.5s word-level Whisper sync + exact sentence-end snapping
+    # 2. Fast word-level Whisper sync + exact sentence-end snapping
     clip_words = clip_data.get("words", [])
     snapped_dur = target_dur
     updated_meta: Dict[str, str] = {}
@@ -1616,10 +1675,21 @@ def render_viral_reel(
             except Exception:
                 clip_words = clip_words or []
         else:
+            # Re-zero timestamps if they reference absolute full-video timestamps
+            if clip_words and clip_words[0].get("start", 0) > 4.0 and clip_words[0].get("start", 0) >= float(clip_data.get("start", 0)) - 1.5:
+                c_start = float(clip_data.get("start", 0))
+                clip_words = [
+                    {
+                        "word": w["word"],
+                        "start": max(0.0, round(float(w["start"]) - c_start, 3)),
+                        "end": max(0.05, round(float(w["end"]) - c_start, 3)),
+                    }
+                    for w in clip_words
+                ]
             clip_words = convert_words_language(clip_words, caption_lang=caption_lang)
             clip_data["words"] = clip_words
             if clip_words:
-                snapped_dur = max(10.0, min(target_dur + 3.0, clip_words[-1]["end"] + 0.25))
+                snapped_dur = max(10.0, min(target_dur + 3.0, clip_words[-1]["end"] + 0.40))
 
         # Auto-generate real Hook Title & Social Caption for instant Heatmap stream clips (~0.4s!)
         if clip_data.get("needs_title_from_clip") and clip_words:

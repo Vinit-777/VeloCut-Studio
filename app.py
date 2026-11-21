@@ -613,7 +613,7 @@ def _estimate_wait_range(
     nvenc_ok: bool,
 ) -> Tuple[int, int]:
     avg_dur = (min_dur + max_dur) / 2.0
-    eff = "full_uncropped" if transition_style == "still_static" else framing_mode
+    eff = framing_mode
     base = 9 if fast_heatmap_mode else 14
     cv = 0 if eff in ("full_uncropped", "wide_cinematic", "blurred_fill") else int(round(avg_dur * 0.07))
     enc = max(5, int(round(avg_dur * (0.14 if nvenc_ok else 0.30))))
@@ -736,10 +736,11 @@ with st.sidebar:
 
     st.markdown('<div class="side-section">Camera & Transitions</div>', unsafe_allow_html=True)
     trans_map = {
-        "Static Frame (Full Video, No Movement)": "still_static",
+        "Smooth Cuts & Dynamic Camera": "smooth_subtle",
         "Blur Whip & Zoom": "blur_whip",
         "Flash Cut & Zoom": "flash_zoom",
         "Smooth Cross-Dissolve": "cross_dissolve",
+        "Static Camera (No Motion / Zoom)": "still_static",
     }
     trans_label = st.selectbox("Transition Style", list(trans_map.keys()), index=0, label_visibility="collapsed")
     transition_style = trans_map[trans_label]
@@ -891,11 +892,11 @@ st.markdown('<div class="vc-label">Preferences</div>', unsafe_allow_html=True)
 q1, q2, q3 = st.columns(3)
 
 video_type_map = {
-    "Full Video (Uncropped Frame)": ("full_video", "full_uncropped"),
-    "Wide / Cinematic / Sports": ("wide_video", "full_uncropped"),
+    "Auto Vertical Face Tracking (Smart 9:16)": ("informational", "full_fill"),
+    "Aesthetic Blurred Canvas (No Cropping)": ("full_video", "blurred_fill"),
+    "Full Video (Studio Uncropped Frame)": ("full_video", "full_uncropped"),
     "Gaming / Livestream (Screen + Facecam)": ("gaming", "streamer_split"),
     "Podcast / Two-Person Interview": ("podcast", "podcast_auto"),
-    "Solo Speaker (Vertical Crop)": ("informational", "full_fill"),
 }
 clip_goal_map = {
     "Best Hook & Story Arc": "viral_hook",
@@ -905,8 +906,8 @@ clip_goal_map = {
 }
 caption_lang_map = {
     "Hinglish (Hindi + English)": "hinglish",
-    "English": "english",
-    "Original Script": "native",
+    "English (Auto Translated)": "english",
+    "Original Spoken Script": "native",
 }
 
 with q1:
@@ -930,10 +931,11 @@ with st.sidebar:
     st.markdown('<div class="side-section">Frame Layout</div>', unsafe_allow_html=True)
     framing_override_map = {
         "Match Selected Format": default_framing,
-        "Full Uncropped Frame": "full_uncropped",
+        "Auto Vertical Face Tracking (9:16 Crop)": "full_fill",
+        "Aesthetic Blurred Canvas (No Cropping)": "blurred_fill",
+        "Full Video (Studio Uncropped)": "full_uncropped",
         "Screen + Facecam Split": "streamer_split",
         "Podcast Top / Bottom Split": "podcast_auto",
-        "Vertical Face Tracking": "full_fill",
     }
     framing_choice = st.selectbox("Layout", list(framing_override_map.keys()), index=0, label_visibility="collapsed")
     framing_mode = framing_override_map[framing_choice]
