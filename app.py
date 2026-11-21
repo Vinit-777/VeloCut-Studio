@@ -46,10 +46,10 @@ from video_studio import (
 )
 
 # =============================================================================
-# PAGE CONFIG & OPUSCLIP 4.0 ULTRA-DARK GLASSMORPHIC DESIGN SYSTEM
+# PAGE CONFIG & CLIPPULSE STUDIO v4 — LIQUID GLASS DESIGN SYSTEM
 # =============================================================================
 st.set_page_config(
-    page_title="VeloCut Opus — #1 AI Video Clipping & Editing Studio",
+    page_title="ClipPulse Studio — AI Short-Form Video Generator",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -74,49 +74,90 @@ st.markdown(
         background: transparent !important;
     }
 
-    /* Main Container & Top Ambient Glow */
+    /* Main Container */
     .block-container {
         padding-top: 0.8rem !important;
         padding-bottom: 3.5rem !important;
-        max-width: 1180px !important;
+        max-width: 1140px !important;
     }
 
-    /* Streamlit Sidebar Opus Styling */
+    /* ======== LIQUID GLASS SIDEBAR ======== */
+    @keyframes liquidShift {
+        0% { background-position: 0% 0%; }
+        50% { background-position: 100% 100%; }
+        100% { background-position: 0% 0%; }
+    }
+    @keyframes pulseGlow {
+        0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.25); border-color: rgba(99, 102, 241, 0.35); }
+        50% { box-shadow: 0 0 30px rgba(168, 85, 247, 0.45); border-color: rgba(168, 85, 247, 0.65); }
+    }
+    @keyframes timerPulse {
+        0%, 100% { border-color: rgba(99, 102, 241, 0.4); box-shadow: 0 0 16px rgba(99, 102, 241, 0.2); }
+        50% { border-color: rgba(6, 182, 212, 0.7); box-shadow: 0 0 28px rgba(6, 182, 212, 0.35); }
+    }
+
     section[data-testid="stSidebar"] {
-        background: #080A10 !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background: linear-gradient(165deg, rgba(8, 11, 22, 0.94) 0%, rgba(18, 14, 38, 0.90) 50%, rgba(6, 9, 18, 0.96) 100%) !important;
+        backdrop-filter: blur(28px) saturate(190%) !important;
+        border-right: 1px solid rgba(99, 102, 241, 0.18) !important;
+        position: relative !important;
+    }
+    section[data-testid="stSidebar"]::after {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0; width: 2.5px;
+        background: linear-gradient(180deg, #6366F1 0%, #A855F7 35%, #06B6D4 70%, #6366F1 100%);
+        background-size: 100% 300%;
+        animation: liquidShift 6s ease infinite;
+        opacity: 0.75;
     }
     section[data-testid="stSidebar"] .block-container {
-        padding-top: 1.2rem !important;
+        padding-top: 1.1rem !important;
     }
-    .side-brand {
+
+    .cp-side-brand {
         font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: 0.74rem;
+        font-size: 0.76rem;
         font-weight: 800;
         letter-spacing: 0.16em;
         text-transform: uppercase;
-        color: #818CF8;
+        background: linear-gradient(135deg, #818CF8 0%, #C084FC 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         display: flex;
         align-items: center;
-        gap: 0.4rem;
+        gap: 0.45rem;
         margin-bottom: 0.9rem;
     }
+    .cp-glass-card {
+        background: rgba(18, 22, 38, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 0.85rem 0.95rem;
+        margin-bottom: 0.75rem;
+        backdrop-filter: blur(16px);
+        transition: all 0.2s ease;
+    }
+    .cp-glass-card:hover {
+        border-color: rgba(168, 85, 247, 0.35);
+        background: rgba(22, 28, 48, 0.7);
+    }
     .side-section {
-        font-size: 0.74rem;
+        font-size: 0.73rem;
         font-weight: 700;
         letter-spacing: 0.09em;
         text-transform: uppercase;
         color: #94A3B8;
-        margin-top: 1.1rem;
-        margin-bottom: 0.45rem;
+        margin-top: 0.85rem;
+        margin-bottom: 0.35rem;
     }
 
-    /* Floating Announcement Banner */
-    .opus-top-banner {
-        background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.22) 50%, rgba(6, 182, 212, 0.15) 100%);
+    /* ======== FLOATING ANNOUNCEMENT BANNER ======== */
+    .cp-top-banner {
+        background: linear-gradient(90deg, rgba(99, 102, 241, 0.16) 0%, rgba(168, 85, 247, 0.22) 50%, rgba(6, 182, 212, 0.16) 100%);
         border: 1px solid rgba(168, 85, 247, 0.35);
         border-radius: 999px;
-        padding: 0.45rem 1.1rem;
+        padding: 0.45rem 1.15rem;
         font-size: 0.82rem;
         font-weight: 500;
         color: #E2E8F0;
@@ -126,25 +167,25 @@ st.markdown(
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-        backdrop-filter: blur(12px);
+        backdrop-filter: blur(14px);
     }
-    .opus-top-banner strong {
+    .cp-top-banner strong {
         color: #FFFFFF;
         font-weight: 700;
     }
-    .opus-banner-pill {
+    .cp-banner-pill {
         background: #6366F1;
         color: #FFFFFF;
-        font-size: 0.68rem;
+        font-size: 0.66rem;
         font-weight: 700;
         text-transform: uppercase;
-        padding: 0.15rem 0.5rem;
+        padding: 0.15rem 0.52rem;
         border-radius: 999px;
         letter-spacing: 0.04em;
     }
 
-    /* Opus Navbar */
-    .opus-navbar {
+    /* ======== NAVBAR ======== */
+    .cp-navbar {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -156,12 +197,12 @@ st.markdown(
         backdrop-filter: blur(20px);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
-    .opus-brand {
+    .cp-brand {
         display: flex;
         align-items: center;
         gap: 0.75rem;
     }
-    .opus-wordmark {
+    .cp-wordmark {
         font-family: 'Plus Jakarta Sans', sans-serif;
         font-size: 1.35rem;
         font-weight: 800;
@@ -171,12 +212,12 @@ st.markdown(
         align-items: center;
         gap: 0.35rem;
     }
-    .opus-wordmark span {
+    .cp-wordmark span {
         background: linear-gradient(135deg, #818CF8 0%, #C084FC 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
-    .opus-version-badge {
+    .cp-version-badge {
         font-size: 0.65rem;
         font-weight: 800;
         letter-spacing: 0.08em;
@@ -187,14 +228,14 @@ st.markdown(
         padding: 0.18rem 0.55rem;
         border-radius: 999px;
     }
-    .opus-nav-status {
+    .cp-nav-status {
         display: flex;
         align-items: center;
         gap: 0.6rem;
         font-size: 0.82rem;
         color: #94A3B8;
     }
-    .opus-dot {
+    .cp-dot {
         width: 8px;
         height: 8px;
         border-radius: 50%;
@@ -202,13 +243,13 @@ st.markdown(
         box-shadow: 0 0 10px #10B981;
     }
 
-    /* Hero Headline */
-    .opus-hero {
+    /* ======== HERO ======== */
+    .cp-hero {
         text-align: center;
         margin: 1.2rem auto 2.0rem auto;
         max-width: 860px;
     }
-    .opus-hero-chip {
+    .cp-hero-chip {
         display: inline-flex;
         align-items: center;
         gap: 0.45rem;
@@ -223,7 +264,7 @@ st.markdown(
         text-transform: uppercase;
         margin-bottom: 0.9rem;
     }
-    .opus-hero h1 {
+    .cp-hero h1 {
         font-family: 'Plus Jakarta Sans', sans-serif;
         font-size: 2.5rem;
         font-weight: 800;
@@ -232,12 +273,12 @@ st.markdown(
         line-height: 1.18;
         margin: 0 0 0.75rem 0;
     }
-    .opus-gradient-text {
+    .cp-gradient-text {
         background: linear-gradient(135deg, #FFFFFF 20%, #A5B4FC 60%, #C084FC 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
-    .opus-hero p {
+    .cp-hero p {
         font-size: 1.05rem;
         color: #94A3B8;
         line-height: 1.55;
@@ -245,8 +286,8 @@ st.markdown(
         margin: 0 auto;
     }
 
-    /* High-Conversion Input Box */
-    .opus-input-card {
+    /* ======== INPUT CARD ======== */
+    .cp-input-card {
         background: linear-gradient(180deg, rgba(19, 23, 36, 0.8) 0%, rgba(13, 16, 26, 0.95) 100%);
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 20px;
@@ -256,7 +297,32 @@ st.markdown(
         backdrop-filter: blur(24px);
     }
 
-    /* Action Buttons */
+    /* ======== LIVE COUNTDOWN TIMER ======== */
+    .cp-timer-box {
+        background: linear-gradient(135deg, rgba(16, 20, 36, 0.85) 0%, rgba(20, 15, 42, 0.85) 100%);
+        border: 1.5px solid rgba(99, 102, 241, 0.4);
+        border-radius: 16px;
+        padding: 1.1rem 1.4rem;
+        margin: 1.2rem 0;
+        animation: timerPulse 2.5s ease-in-out infinite;
+        backdrop-filter: blur(20px);
+    }
+    .cp-timer-grid {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .cp-timer-clock {
+        font-family: 'Plus Jakarta Sans', monospace;
+        font-size: 2.1rem;
+        font-weight: 800;
+        color: #FFFFFF;
+        letter-spacing: -0.02em;
+    }
+
+    /* ======== BUTTONS ======== */
     div.stButton > button[kind="primary"] {
         background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%) !important;
         color: #FFFFFF !important;
@@ -290,7 +356,7 @@ st.markdown(
         color: #FFFFFF !important;
     }
 
-    /* Tabs Styling */
+    /* ======== TABS ======== */
     .stTabs [data-baseweb="tab-list"] {
         gap: 1.8rem;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -312,7 +378,7 @@ st.markdown(
         border-radius: 2px !important;
     }
 
-    /* Inputs */
+    /* ======== INPUTS ======== */
     .stTextInput input, .stSelectbox [data-baseweb="select"] > div {
         background-color: #0A0D15 !important;
         border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -325,8 +391,8 @@ st.markdown(
         box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25) !important;
     }
 
-    /* ETA Bar */
-    .opus-eta {
+    /* ======== ETA BAR ======== */
+    .cp-eta {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -341,19 +407,19 @@ st.markdown(
         font-size: 0.86rem;
         color: #CBD5E1;
     }
-    .opus-eta strong {
+    .cp-eta strong {
         color: #FFFFFF;
         font-weight: 700;
     }
 
-    /* Feature Mega Grid (Opus 4.0 Style) */
-    .opus-feature-grid {
+    /* ======== FEATURE CARDS ======== */
+    .cp-feature-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 1.1rem;
         margin: 1.5rem 0 2.2rem 0;
     }
-    .opus-feat-card {
+    .cp-feat-card {
         background: linear-gradient(180deg, rgba(20, 24, 38, 0.75) 0%, rgba(13, 16, 26, 0.85) 100%);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 16px;
@@ -361,17 +427,17 @@ st.markdown(
         transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
         backdrop-filter: blur(16px);
     }
-    .opus-feat-card:hover {
+    .cp-feat-card:hover {
         transform: translateY(-3px);
         border-color: rgba(168, 85, 247, 0.4);
         box-shadow: 0 12px 30px rgba(99, 102, 241, 0.15);
     }
-    .opus-feat-icon {
+    .cp-feat-icon {
         font-size: 1.6rem;
         margin-bottom: 0.65rem;
         display: inline-block;
     }
-    .opus-feat-title {
+    .cp-feat-title {
         font-family: 'Plus Jakarta Sans', sans-serif;
         font-size: 0.98rem;
         font-weight: 700;
@@ -381,32 +447,35 @@ st.markdown(
         align-items: center;
         gap: 0.45rem;
     }
-    .opus-feat-desc {
+    .cp-feat-desc {
         font-size: 0.84rem;
         color: #94A3B8;
         line-height: 1.45;
     }
-    .opus-badge-new {
+    .cp-badge-active {
         font-size: 0.62rem;
         font-weight: 800;
         background: #10B981;
         color: #FFFFFF;
-        padding: 0.1rem 0.45rem;
+        padding: 0.12rem 0.48rem;
         border-radius: 999px;
         text-transform: uppercase;
+        letter-spacing: 0.04em;
     }
-    .opus-badge-pro {
+    .cp-badge-roadmap {
         font-size: 0.62rem;
         font-weight: 800;
-        background: linear-gradient(135deg, #8B5CF6, #EC4899);
-        color: #FFFFFF;
-        padding: 0.1rem 0.45rem;
+        background: rgba(245, 158, 11, 0.2);
+        border: 1px solid rgba(245, 158, 11, 0.45);
+        color: #FCD34D;
+        padding: 0.12rem 0.48rem;
         border-radius: 999px;
         text-transform: uppercase;
+        letter-spacing: 0.04em;
     }
 
-    /* Virality Score Badge */
-    .opus-virality-badge {
+    /* ======== VIRALITY BADGES ======== */
+    .cp-virality-badge {
         display: inline-flex;
         align-items: center;
         gap: 0.45rem;
@@ -419,7 +488,7 @@ st.markdown(
         font-weight: 800;
         box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
     }
-    .opus-meta-pill {
+    .cp-meta-pill {
         display: inline-block;
         background: rgba(255, 255, 255, 0.08);
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -431,14 +500,14 @@ st.markdown(
         margin-right: 0.4rem;
     }
 
-    /* Template Cards */
-    .opus-tpl-grid {
+    /* ======== TEMPLATES ======== */
+    .cp-tpl-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         gap: 1.1rem;
         margin: 1.2rem 0 2rem 0;
     }
-    .opus-tpl-card {
+    .cp-tpl-card {
         background: #0F131E;
         border: 1px solid rgba(255, 255, 255, 0.09);
         border-radius: 16px;
@@ -446,11 +515,11 @@ st.markdown(
         text-align: center;
         transition: all 0.2s ease;
     }
-    .opus-tpl-card:hover {
+    .cp-tpl-card:hover {
         border-color: #818CF8;
         transform: translateY(-3px);
     }
-    .opus-tpl-preview {
+    .cp-tpl-preview {
         height: 85px;
         display: flex;
         align-items: center;
@@ -517,7 +586,7 @@ class BackgroundPreRenderer:
         cfg_copy = copy.deepcopy(cfg)
 
         def _worker():
-            out_file = f"outputs/velocut_r{clip_copy['rank']}_{int(time.time() * 1000)}.mp4"
+            out_file = f"outputs/clippulse_r{clip_copy['rank']}_{int(time.time() * 1000)}.mp4"
             try:
                 info = render_viral_reel(
                     source=source,
@@ -582,6 +651,10 @@ if "shown_count" not in st.session_state:
     st.session_state.shown_count = 1
 if "run_id" not in st.session_state:
     st.session_state.run_id = "init"
+if "generation_start_time" not in st.session_state:
+    st.session_state.generation_start_time = None
+if "first_clip_duration_record" not in st.session_state:
+    st.session_state.first_clip_duration_record = None
 
 
 def _clear_previous_clips():
@@ -590,6 +663,8 @@ def _clear_previous_clips():
     st.session_state.rendered_reels = {}
     st.session_state.shown_count = 1
     st.session_state.run_id = f"run_{int(time.time() * 1000)}"
+    st.session_state.generation_start_time = None
+    st.session_state.first_clip_duration_record = None
 
 
 # =============================================================================
@@ -798,7 +873,7 @@ def _ensure_fallback_clips(
 
 
 def _cache_path_for(source: str, video_type: str, clip_goal: str, fast_heatmap: bool, min_dur: int, max_dur: int) -> Path:
-    key_str = f"opus_v4|{source}|{video_type}|{clip_goal}|{fast_heatmap}|{min_dur}|{max_dur}"
+    key_str = f"clippulse_v4|{source}|{video_type}|{clip_goal}|{fast_heatmap}|{min_dur}|{max_dur}"
     digest = hashlib.md5(key_str.encode("utf-8")).hexdigest()[:12]
     return Path("temp") / f"analysis_cache_{digest}.json"
 
@@ -813,26 +888,26 @@ def _estimate_wait_range(
 ) -> Tuple[int, int]:
     avg_dur = (min_dur + max_dur) / 2.0
     eff = framing_mode
-    base = 8 if fast_heatmap_mode else 12
-    cv = 0 if eff in ("full_uncropped", "wide_cinematic", "blurred_fill") else int(round(avg_dur * 0.06))
-    enc = max(4, int(round(avg_dur * (0.12 if nvenc_ok else 0.28))))
+    base = 6 if fast_heatmap_mode else 10
+    cv = 0 if eff in ("full_uncropped", "wide_cinematic", "blurred_fill") else int(round(avg_dur * 0.05))
+    enc = max(4, int(round(avg_dur * (0.10 if nvenc_ok else 0.24))))
     mid = base + cv + enc
-    return max(10, mid - 4), mid + 6
+    return max(8, mid - 3), mid + 5
 
 
 def _clean_progress_text(frac: float, raw_label: str) -> str:
     if frac < 0.22:
-        return "Step 1/4: Fetching video stream & audio track..."
-    if frac < 0.35:
-        return "Step 2/4: Generating synchronized kinetic captions..."
-    if frac < 0.45:
-        return "Step 3/4: Framing layout & rendering 3D emojis..."
+        return "Step 1/4: Fetching video stream & extracting audio (~3s)..."
+    if frac < 0.38:
+        return "Step 2/4: Transcribing speech & word alignment via Whisper (~5s)..."
+    if frac < 0.50:
+        return "Step 3/4: Framing 9:16 layout & 3D emojis (~4s)..."
     if frac >= 0.99:
         return "Step 4/4: Finalizing Ultra-HD Short..."
     m = re.search(r"~(\d+s)", raw_label)
     if m:
-        return f"Rendering short ({int(frac * 100)}%) — about {m.group(1)} remaining"
-    return f"Rendering short ({int(frac * 100)}%)..."
+        return f"Step 4/4: Encoding HQ Reel ({int(frac * 100)}%) — about {m.group(1)} remaining"
+    return f"Step 4/4: Encoding HQ Reel ({int(frac * 100)}%)..."
 
 
 def _build_timeline_chart(energy_curve, clips, shown_count: int):
@@ -868,14 +943,35 @@ def _build_timeline_chart(energy_curve, clips, shown_count: int):
     return fig
 
 
-def _render_clip_clean(source: str, clip: Dict[str, Any], cfg: Dict[str, Any]):
+def _render_clip_clean(source: str, clip: Dict[str, Any], cfg: Dict[str, Any], timer_placeholder=None, est_sec: int = 24):
     rank = clip["rank"]
-    out_file = f"outputs/velocut_r{rank}_{int(time.time() * 1000)}.mp4"
+    out_file = f"outputs/clippulse_r{rank}_{int(time.time() * 1000)}.mp4"
 
     pbar = st.progress(0.04, text="Preparing your short...")
+    t_start = time.time()
 
     def pcb(frac: float, label: str):
+        elapsed = time.time() - t_start
+        rem = max(1, int(round(est_sec - elapsed))) if elapsed < est_sec else 2
         pbar.progress(frac, text=_clean_progress_text(frac, label))
+        if timer_placeholder is not None:
+            timer_placeholder.markdown(
+                f"""
+                <div class="cp-timer-box">
+                    <div class="cp-timer-grid">
+                        <div>
+                            <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:#818CF8; margin-bottom:0.2rem;">⏱️ PRECISE ESTIMATE TIMER</div>
+                            <div class="cp-timer-clock">{elapsed:.1f}s <span style="font-size:1.1rem; color:#94A3B8; font-weight:600;">/ ~{est_sec}s target</span></div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:0.75rem; color:#A5B4FC; font-weight:700;">First Clip Delivery: <span style="color:#10B981;">~{rem}s remaining</span></div>
+                            <div style="font-size:0.75rem; color:#94A3B8;">Status: {_clean_progress_text(frac, label).split('(')[0]}</div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
     info = render_viral_reel(
         source=source,
@@ -919,163 +1015,169 @@ def _kickoff_next_background_clip(run_id: str, source: str, clips, shown_count: 
 
 
 # =============================================================================
-# SIDEBAR — OPUS PRO STUDIO CONTROLS & BRAND KIT
+# SIDEBAR — LIQUID GLASS STUDIO CONTROLS
 # =============================================================================
 nvenc_ok = check_nvenc_available()
 
 with st.sidebar:
-    st.markdown('<div class="side-brand">⚡ OpusClip 4.0 Pro</div>', unsafe_allow_html=True)
+    st.markdown('<div class="cp-side-brand">⚡ ClipPulse Studio Pro</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="side-section">Clip Duration (Seconds)</div>', unsafe_allow_html=True)
-    dur_range = st.slider("Target Duration", 15, 90, (30, 50), label_visibility="collapsed")
-    min_dur, max_dur = dur_range
+    with st.container():
+        st.markdown('<div class="side-section">Clip Duration (Seconds)</div>', unsafe_allow_html=True)
+        dur_range = st.slider("Target Duration", 15, 90, (30, 50), label_visibility="collapsed")
+        min_dur, max_dur = dur_range
 
-    st.markdown('<div class="side-section">Animated Caption Preset</div>', unsafe_allow_html=True)
-    style_name = st.selectbox("Caption Template", list(STYLE_PRESETS.keys()), index=0, label_visibility="collapsed")
+        st.markdown('<div class="side-section">Animated Caption Preset</div>', unsafe_allow_html=True)
+        # Display friendly names
+        style_list = list(STYLE_PRESETS.keys())
+        # Put Pulse Hormozi first if present
+        if "Pulse Hormozi" in style_list:
+            style_list.remove("Pulse Hormozi")
+            style_list.insert(0, "Pulse Hormozi")
+        style_name = st.selectbox("Caption Template", style_list, index=0, label_visibility="collapsed")
 
-    st.markdown('<div class="side-section">Camera & AI Reframe</div>', unsafe_allow_html=True)
-    trans_map = {
-        "Smooth Cuts & Subtle Camera": "smooth_subtle",
-        "Blur Whip & Zoom": "blur_whip",
-        "Flash Cut & Zoom": "flash_zoom",
-        "Smooth Cross-Dissolve": "cross_dissolve",
-        "Static Camera (No Motion / Zoom)": "still_static",
-    }
-    trans_label = st.selectbox("Transition Style", list(trans_map.keys()), index=0, label_visibility="collapsed")
-    transition_style = trans_map[trans_label]
+        st.markdown('<div class="side-section">Camera & Motion</div>', unsafe_allow_html=True)
+        trans_map = {
+            "Smooth Cuts & Subtle Camera": "smooth_subtle",
+            "Blur Whip & Zoom": "blur_whip",
+            "Flash Cut & Zoom": "flash_zoom",
+            "Smooth Cross-Dissolve": "cross_dissolve",
+            "Static Camera (No Motion / Zoom)": "still_static",
+        }
+        trans_label = st.selectbox("Transition Style", list(trans_map.keys()), index=0, label_visibility="collapsed")
+        transition_style = trans_map[trans_label]
 
-    st.markdown('<div class="side-section">AI Visual Elements</div>', unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    with c1:
-        show_captions = st.checkbox("Captions", value=True)
-        show_hook_banner = st.checkbox("Title Card", value=True)
-        smooth_outro = st.checkbox("Smooth Ending", value=True)
-        color_punch = st.checkbox("Color Grade", value=True)
-    with c2:
-        show_emojis = st.checkbox("3D Emojis", value=True)
-        show_progress_bar = st.checkbox("Progress Bar", value=True)
-        dynamic_zoom = st.checkbox("Subtle Zoom", value=(transition_style != "still_static"))
-        audio_polish = st.checkbox("Enhance Speech", value=True)
+        st.markdown('<div class="side-section">Visual Enhancements</div>', unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
+        with c1:
+            show_captions = st.checkbox("Captions", value=True)
+            show_hook_banner = st.checkbox("Title Card", value=True)
+            smooth_outro = st.checkbox("Smooth Ending", value=True)
+            color_punch = st.checkbox("Color Grade", value=True)
+        with c2:
+            show_emojis = st.checkbox("3D Emojis", value=True)
+            show_progress_bar = st.checkbox("Progress Bar", value=True)
+            dynamic_zoom = st.checkbox("Subtle Zoom", value=(transition_style != "still_static"))
+            audio_polish = st.checkbox("Enhance Speech", value=True)
 
-    st.markdown('<div class="side-section">Brand CTA Banner</div>', unsafe_allow_html=True)
-    outro_text = st.text_input("Ending CTA", value="WATCH FULL VIDEO", max_chars=24, label_visibility="collapsed")
+        st.markdown('<div class="side-section">Brand CTA Banner</div>', unsafe_allow_html=True)
+        outro_text = st.text_input("Ending CTA", value="WATCH FULL VIDEO", max_chars=24, label_visibility="collapsed")
 
-    st.markdown('<div class="side-section">Background Audio Track</div>', unsafe_allow_html=True)
-    bg_music_file = st.file_uploader("Upload MP3 or WAV", type=["mp3", "wav"], label_visibility="collapsed")
-    bg_music_path: Optional[str] = None
-    if bg_music_file is not None:
-        bg_save = Path("temp") / f"bgm_{bg_music_file.name}"
-        bg_save.write_bytes(bg_music_file.getbuffer())
-        bg_music_path = str(bg_save)
+        st.markdown('<div class="side-section">Background Music (Optional)</div>', unsafe_allow_html=True)
+        bg_music_file = st.file_uploader("Upload MP3 or WAV", type=["mp3", "wav"], label_visibility="collapsed")
+        bg_music_path: Optional[str] = None
+        if bg_music_file is not None:
+            bg_save = Path("temp") / f"bgm_{bg_music_file.name}"
+            bg_save.write_bytes(bg_music_file.getbuffer())
+            bg_music_path = str(bg_save)
 
-    st.markdown('<div class="side-section">Cloud Engine & Auth</div>', unsafe_allow_html=True)
-    groq_cur = os.environ.get("GROQ_API_KEY", "").strip()
-    is_groq_ready = groq_cur.startswith("gsk_") and len(groq_cur) > 20
-    if is_groq_ready:
-        st.markdown(
-            '<div style="font-size:0.75rem; color:#10B981; font-weight:700; margin-bottom:4px;">'
-            '● Groq LPU Engine Active'
-            '</div>',
-            unsafe_allow_html=True,
+        st.markdown('<div class="side-section">AI Engine & Auth</div>', unsafe_allow_html=True)
+        groq_cur = os.environ.get("GROQ_API_KEY", "").strip()
+        is_groq_ready = groq_cur.startswith("gsk_") and len(groq_cur) > 20
+        if is_groq_ready:
+            st.markdown(
+                '<div style="font-size:0.75rem; color:#10B981; font-weight:700; margin-bottom:4px;">'
+                '● Groq LPU Engine Active'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                '<div style="font-size:0.75rem; color:#F59E0B; font-weight:700; margin-bottom:4px;">'
+                '▲ Free Groq API Key Required'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+        entered_groq = st.text_input(
+            "Groq API Key",
+            value=groq_cur,
+            type="password",
+            placeholder="gsk_...",
+            label_visibility="collapsed",
+            help="Free instant key from console.groq.com",
+            key="groq_key_input",
         )
-    else:
-        st.markdown(
-            '<div style="font-size:0.75rem; color:#F59E0B; font-weight:700; margin-bottom:4px;">'
-            '▲ Free Groq API Key Required'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-
-    entered_groq = st.text_input(
-        "Groq API Key",
-        value=groq_cur,
-        type="password",
-        placeholder="gsk_...",
-        label_visibility="collapsed",
-        help="Free instant key from console.groq.com",
-        key="groq_key_input",
-    )
-    if entered_groq.strip() and entered_groq.strip() != groq_cur:
-        os.environ["GROQ_API_KEY"] = entered_groq.strip()
-        st.rerun()
-
-    cookies_cand = resolve_cookies_path()
-    has_cookies = cookies_cand is not None and cookies_cand.exists() and is_valid_cookie_file(cookies_cand)
-    if has_cookies:
-        st.markdown(
-            f'<div style="font-size:0.75rem; color:#10B981; font-weight:700; margin-top:6px; margin-bottom:4px;">'
-            f'● YouTube Auth Active ({cookies_cand.name})'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            '<div style="font-size:0.75rem; color:#94A3B8; font-weight:500; margin-top:6px; margin-bottom:4px;">'
-            '○ YouTube: Direct Access'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-
-    with st.expander("YouTube Cloud Cookies", expanded=False):
-        st.caption("Paste cookies if running behind restrictive cloud datacenter IPs:")
-        uploaded_cookie = st.file_uploader("Upload cookies.txt", type=["txt"], key="cookie_uploader")
-        if uploaded_cookie is not None:
-            raw_text = uploaded_cookie.getvalue().decode("utf-8", errors="ignore")
-            saved = save_and_sanitize_cookies(raw_text, Path("cookies.txt"))
-            if saved:
-                st.success("cookies.txt sanitized & activated!")
-            else:
-                st.error("Uploaded file does not contain valid Netscape cookies.")
+        if entered_groq.strip() and entered_groq.strip() != groq_cur:
+            os.environ["GROQ_API_KEY"] = entered_groq.strip()
             st.rerun()
 
-        pasted_cookies = st.text_area("Or Paste Cookie Content", placeholder="# Netscape HTTP Cookie File...", height=60, key="paste_cookie_box")
-        c_btn1, c_btn2 = st.columns(2)
-        with c_btn1:
-            if st.button("Apply Cookies", use_container_width=True, key="btn_apply_cookie"):
-                saved = save_and_sanitize_cookies(pasted_cookies, Path("cookies.txt"))
+        cookies_cand = resolve_cookies_path()
+        has_cookies = cookies_cand is not None and cookies_cand.exists() and is_valid_cookie_file(cookies_cand)
+        if has_cookies:
+            st.markdown(
+                f'<div style="font-size:0.75rem; color:#10B981; font-weight:700; margin-top:6px; margin-bottom:4px;">'
+                f'● YouTube Auth Active ({cookies_cand.name})'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                '<div style="font-size:0.75rem; color:#94A3B8; font-weight:500; margin-top:6px; margin-bottom:4px;">'
+                '○ YouTube: Direct Access'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+        with st.expander("YouTube Cloud Cookies", expanded=False):
+            st.caption("Paste cookies if running behind restrictive cloud datacenter IPs:")
+            uploaded_cookie = st.file_uploader("Upload cookies.txt", type=["txt"], key="cookie_uploader")
+            if uploaded_cookie is not None:
+                raw_text = uploaded_cookie.getvalue().decode("utf-8", errors="ignore")
+                saved = save_and_sanitize_cookies(raw_text, Path("cookies.txt"))
                 if saved:
-                    st.success("Cookies sanitized & applied!")
-                    st.rerun()
+                    st.success("cookies.txt sanitized & activated!")
                 else:
-                    st.error("Could not parse cookie content. Paste standard Netscape cookies.")
-        with c_btn2:
-            if st.button("Test YouTube", use_container_width=True, key="btn_test_yt"):
-                ok, detail = test_youtube_access()
-                if ok:
-                    st.success(f"YouTube OK: {detail[:28]}...")
-                else:
-                    st.error(f"Error: {detail[:60]}")
+                    st.error("Uploaded file does not contain valid Netscape cookies.")
+                st.rerun()
+
+            pasted_cookies = st.text_area("Or Paste Cookie Content", placeholder="# Netscape HTTP Cookie File...", height=60, key="paste_cookie_box")
+            c_btn1, c_btn2 = st.columns(2)
+            with c_btn1:
+                if st.button("Apply Cookies", use_container_width=True, key="btn_apply_cookie"):
+                    saved = save_and_sanitize_cookies(pasted_cookies, Path("cookies.txt"))
+                    if saved:
+                        st.success("Cookies sanitized & applied!")
+                        st.rerun()
+                    else:
+                        st.error("Could not parse cookie content. Paste standard Netscape cookies.")
+            with c_btn2:
+                if st.button("Test YouTube", use_container_width=True, key="btn_test_yt"):
+                    ok, detail = test_youtube_access()
+                    if ok:
+                        st.success(f"YouTube OK: {detail[:28]}...")
+                    else:
+                        st.error(f"Error: {detail[:60]}")
 
 
 # =============================================================================
-# TOP ANNOUNCEMENT BANNER & OPUS NAVBAR
+# TOP ANNOUNCEMENT BANNER & NAVBAR
 # =============================================================================
 st.markdown(
     """
-    <div class="opus-top-banner">
-        <span class="opus-banner-pill">OpusClip 4.0</span>
-        <span><b>Next-Gen Generative AI Engine Active</b> • 1 Long Video to 10 Ready-to-Post Shorts in 1-Click • Powered by Groq LPU & Whisper Turbo</span>
+    <div class="cp-top-banner">
+        <span class="cp-banner-pill">v4.0 Pro</span>
+        <span><b>ClipPulse AI Engine Active</b> • 1 Long Video to 10 Ready-to-Post Viral Shorts in 1-Click • Whisper Turbo + Groq LPU</span>
     </div>
-    <div class="opus-navbar">
-        <div class="opus-brand">
+    <div class="cp-navbar">
+        <div class="cp-brand">
             <svg width="34" height="34" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="36" height="36" rx="10" fill="url(#opus_grad)"/>
-                <path d="M11 11L18 25L25 11" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M22 25L28 13" stroke="#DDD6FE" stroke-width="2.4" stroke-linecap="round"/>
-                <circle cx="28" cy="11" r="2" fill="#FFFFFF"/>
+                <rect width="36" height="36" rx="10" fill="url(#cp_grad)"/>
+                <path d="M7 18H12L15 9L21 27L24 18H29" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="29" cy="18" r="2.2" fill="#00F0FF"/>
                 <defs>
-                    <linearGradient id="opus_grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#7C3AED"/>
-                        <stop offset="0.5" stop-color="#4F46E5"/>
+                    <linearGradient id="cp_grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#4F46E5"/>
+                        <stop offset="0.5" stop-color="#7C3AED"/>
                         <stop offset="1" stop-color="#06B6D4"/>
                     </linearGradient>
                 </defs>
             </svg>
-            <div class="opus-wordmark">Opus<span>Clip</span> <span style="font-size:0.95rem; font-weight:600; color:#94A3B8;">Pro</span></div>
-            <div class="opus-version-badge">4.0 PRO</div>
+            <div class="cp-wordmark">Clip<span>Pulse</span> <span style="font-size:0.95rem; font-weight:600; color:#94A3B8;">Studio</span></div>
+            <div class="cp-version-badge">v4.0 PRO</div>
         </div>
-        <div class="opus-nav-status">
-            <div class="opus-dot"></div>
+        <div class="cp-nav-status">
+            <div class="cp-dot"></div>
             <span>Ultra-Fast LPU Engine Online</span>
         </div>
     </div>
@@ -1083,11 +1185,11 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Top Navigation Tabs (Studio, Features, Templates, Virality AI, Pro Hub)
-tab_studio, tab_features, tab_templates, tab_virality, tab_pro = st.tabs([
+# Top Navigation Tabs
+tab_studio, tab_templates, tab_features, tab_virality, tab_pro = st.tabs([
     "🎬 Studio",
-    "⚡ AI Features",
-    "🎨 Brand Templates",
+    "🎨 Caption Styles",
+    "⚡ Built-in Features & Roadmap",
     "🎯 Virality AI™",
     "💎 Pro Exports",
 ])
@@ -1099,10 +1201,10 @@ tab_studio, tab_features, tab_templates, tab_virality, tab_pro = st.tabs([
 with tab_studio:
     st.markdown(
         """
-        <div class="opus-hero">
-            <div class="opus-hero-chip">🔥 #1 AI Video Clipping & Editing Tool</div>
-            <h1>1 Long Video. 10 Viral Clips.<br><span class="opus-gradient-text">Created 10x Faster with AI.</span></h1>
-            <p>OpusClip turns podcasts, lectures, streams, and tutorials into high-converting shorts with automated hook detection, animated kinetic captions, 3D emojis, AI reframe, and virality scores.</p>
+        <div class="cp-hero">
+            <div class="cp-hero-chip">🔥 #1 AI Video Clipping Tool</div>
+            <h1>Turn long videos into<br><span class="cp-gradient-text">ready-to-post viral shorts.</span></h1>
+            <p>ClipPulse extracts the strongest storytelling moments, syncs kinetic animated captions, adds 3D emojis, and auto-reframes to 9:16 vertical with audience virality scores.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1114,7 +1216,7 @@ with tab_studio:
     source_to_run: Optional[str] = None
     trigger_analysis = False
 
-    st.markdown('<div class="opus-input-card">', unsafe_allow_html=True)
+    st.markdown('<div class="cp-input-card">', unsafe_allow_html=True)
     in_tab_yt, in_tab_local = st.tabs(["🔗 Paste YouTube or Stream URL", "📁 Upload Local Video File"])
 
     with in_tab_yt:
@@ -1128,7 +1230,7 @@ with tab_studio:
                 on_change=_clear_previous_clips,
             )
         with y_col2:
-            if st.button("⚡ Get Clips #1 AI", type="primary", use_container_width=True, key="btn_yt"):
+            if st.button("⚡ Generate Shorts", type="primary", use_container_width=True, key="btn_yt"):
                 if not yt_url.strip().startswith(("http://", "https://")):
                     _clear_previous_clips()
                     st.error("Please enter a valid video link starting with https://")
@@ -1238,10 +1340,12 @@ with tab_studio:
     eta_low, eta_high = _estimate_wait_range(
         framing_mode, transition_style, fast_heatmap_mode, min_dur, max_dur, nvenc_ok
     )
+    mid_eta = int(round((eta_low + eta_high) / 2.0))
+
     st.markdown(
         f"""
-        <div class="opus-eta">
-            <div>⚡ Generation Speed: <strong>~{eta_low}–{eta_high} seconds</strong> per viral short</div>
+        <div class="cp-eta">
+            <div>⏱️ Precise First-Clip Delivery: <strong>~{mid_eta} seconds</strong> ({eta_low}–{eta_high}s based on {'GPU NVENC' if nvenc_ok else 'CPU'})</div>
             <div style="color:#94A3B8; font-size:0.82rem;">Parallel background pre-rendering active for instant multi-clip delivery.</div>
         </div>
         """,
@@ -1252,12 +1356,34 @@ with tab_studio:
     # -------------------------------------------------------------------------
     # PIPELINE EXECUTION & RESULTS
     # -------------------------------------------------------------------------
+    timer_slot = st.empty()
     live_work_slot = st.container()
     results_slot = st.empty()
 
     if trigger_analysis and source_to_run:
         _clear_previous_clips()
         results_slot.empty()
+        st.session_state.generation_start_time = time.time()
+        start_ts = st.session_state.generation_start_time
+
+        # Initial Precise Timer Card
+        timer_slot.markdown(
+            f"""
+            <div class="cp-timer-box">
+                <div class="cp-timer-grid">
+                    <div>
+                        <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:#818CF8; margin-bottom:0.2rem;">⏱️ PRECISE ESTIMATE TIMER</div>
+                        <div class="cp-timer-clock">0.0s <span style="font-size:1.1rem; color:#94A3B8; font-weight:600;">/ ~{mid_eta}s target</span></div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:0.75rem; color:#A5B4FC; font-weight:700;">First Clip Delivery: <span style="color:#10B981;">~{mid_eta}s remaining</span></div>
+                        <div style="font-size:0.75rem; color:#94A3B8;">Status: Initializing AI engine & analyzing video...</div>
+                    </div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         with live_work_slot:
             cache_file = _cache_path_for(source_to_run, video_type, clip_goal, fast_heatmap_mode, min_dur, max_dur)
@@ -1337,7 +1463,7 @@ with tab_studio:
                                     max_dur,
                                     num_clips=3,
                                     skip_llm_title=True,
-                                )
+                                    )
                             st.session_state.analysis = result
                             st.session_state.active_source = source_to_run
                         else:
@@ -1353,6 +1479,27 @@ with tab_studio:
                         st.session_state.active_source,
                         st.session_state.analysis["clips"][0],
                         render_cfg,
+                        timer_placeholder=timer_slot,
+                        est_sec=mid_eta,
+                    )
+                    total_dur = round(time.time() - start_ts, 1)
+                    st.session_state.first_clip_duration_record = total_dur
+                    timer_slot.markdown(
+                        f"""
+                        <div class="cp-timer-box" style="border-color:#10B981; animation:none; box-shadow: 0 0 24px rgba(16, 185, 129, 0.25);">
+                            <div class="cp-timer-grid">
+                                <div>
+                                    <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:#10B981; margin-bottom:0.2rem;">🎉 FIRST CLIP DELIVERED</div>
+                                    <div class="cp-timer-clock" style="color:#10B981;">{total_dur}s <span style="font-size:1.1rem; color:#A7F3D0; font-weight:600;">(Target: ~{mid_eta}s)</span></div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:0.8rem; color:#FFFFFF; font-weight:700;">1080p 60fps HD Short Ready</div>
+                                    <div style="font-size:0.75rem; color:#94A3B8;">Subtitles (.SRT) and MP4 available below</div>
+                                </div>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
                     )
                     _kickoff_next_background_clip(
                         st.session_state.run_id,
@@ -1381,6 +1528,10 @@ with tab_studio:
             render_cfg["video_title"] = audio_info.get("title", "")
             _kickoff_next_background_clip(st.session_state.run_id, active_source, clips, shown_count, render_cfg)
 
+            speed_note = ""
+            if st.session_state.first_clip_duration_record:
+                speed_note = f"⚡ First clip rendered in {st.session_state.first_clip_duration_record}s • "
+
             st.markdown(
                 f"""
                 <div style="display:flex; justify-content:space-between; align-items:center; margin: 1.5rem 0 1rem 0;">
@@ -1388,7 +1539,7 @@ with tab_studio:
                         ✨ Generated Viral Shorts ({shown_count} of {len(clips)})
                     </div>
                     <div style="color:#94A3B8; font-size:0.86rem; font-weight:600;">
-                        1080p 60fps HD • Kinetic Captions Ready
+                        {speed_note}1080p 60fps HD • Kinetic Captions Ready
                     </div>
                 </div>
                 """,
@@ -1417,11 +1568,11 @@ with tab_studio:
                             f"""
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.9rem;">
                                 <div>
-                                    <span class="opus-meta-pill">CLIP #{rank}</span>
-                                    <span class="opus-meta-pill">{_fmt_ts(clip['start'])} – {_fmt_ts(clip['end'])}</span>
-                                    <span class="opus-meta-pill">{int(round(clip['duration']))}s</span>
+                                    <span class="cp-meta-pill">CLIP #{rank}</span>
+                                    <span class="cp-meta-pill">{_fmt_ts(clip['start'])} – {_fmt_ts(clip['end'])}</span>
+                                    <span class="cp-meta-pill">{int(round(clip['duration']))}s</span>
                                 </div>
-                                <div class="opus-virality-badge">🔥 {virality_val} Virality Score</div>
+                                <div class="cp-virality-badge">🔥 {virality_val} Virality Score</div>
                             </div>
                             """,
                             unsafe_allow_html=True,
@@ -1479,10 +1630,11 @@ with tab_studio:
 
                             dl_c1, dl_c2 = st.columns(2)
                             with dl_c1:
+                                slug = clip['hook_title'][:20].replace(' ', '_')
                                 st.download_button(
                                     label="📥 Download MP4",
                                     data=video_bytes,
-                                    file_name=f"OpusClip_{rank}_{clip['hook_title'][:20].replace(' ', '_')}.mp4",
+                                    file_name=f"ClipPulse_{rank}_{slug}.mp4",
                                     mime="video/mp4",
                                     use_container_width=True,
                                     key=f"dl_btn_{st.session_state.run_id}_{rank}",
@@ -1492,7 +1644,7 @@ with tab_studio:
                                 st.download_button(
                                     label="📝 Export Subtitles (.SRT)",
                                     data=srt_data,
-                                    file_name=f"OpusClip_{rank}_Subtitles.srt",
+                                    file_name=f"ClipPulse_{rank}_Subtitles.srt",
                                     mime="text/plain",
                                     use_container_width=True,
                                     key=f"srt_btn_{st.session_state.run_id}_{rank}",
@@ -1525,106 +1677,18 @@ with tab_studio:
 
 
 # =============================================================================
-# TAB 2: ⚡ OPUSCLIP AI FEATURES (MEGA-MENU SHOWCASE FROM SCREENSHOT)
-# =============================================================================
-with tab_features:
-    st.markdown(
-        """
-        <div style="text-align:center; margin: 1.2rem auto 2rem auto; max-width:800px;">
-            <div class="opus-hero-chip">✨ OpusClip 4.0 Ecosystem</div>
-            <h2 style="font-family:'Plus Jakarta Sans', sans-serif; font-size:2.2rem; font-weight:800; color:#FFFFFF; margin:0 0 0.5rem 0;">
-                All-in-One AI Video Suite
-            </h2>
-            <p style="color:#94A3B8; font-size:1.02rem;">
-                Transform your raw footage into an automated social media powerhouse with deep learning vision and audio intelligence.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        """
-        <div class="opus-feature-grid">
-            <div class="opus-feat-card">
-                <div class="opus-feat-icon">🎬</div>
-                <div class="opus-feat-title">AI Producer <span class="opus-badge-new">NEW</span></div>
-                <div class="opus-feat-desc">Turn your raw footage into a polished, ready to post video with automated narrative pacing and virality score detection.</div>
-            </div>
-            <div class="opus-feat-card">
-                <div class="opus-feat-icon">✨</div>
-                <div class="opus-feat-title">ClipAnything <span class="opus-badge-pro">PRO</span></div>
-                <div class="opus-feat-desc">The fastest way to turn any long video (YouTube, streams, lectures, podcasts) into viral shorts in 1 click.</div>
-            </div>
-            <div class="opus-feat-card">
-                <div class="opus-feat-icon">💬</div>
-                <div class="opus-feat-title">Animated Captions</div>
-                <div class="opus-feat-desc">The fastest way to add kinetic word-by-word animated captions with auto-synced 3D emojis and karaoke highlights.</div>
-            </div>
-            <div class="opus-feat-card">
-                <div class="opus-feat-icon">📐</div>
-                <div class="opus-feat-title">AI Reframe <span class="opus-badge-new">UPDATED</span></div>
-                <div class="opus-feat-desc">Resize any video to 9:16 vertical for TikTok, Shorts, and Reels while keeping 100% of the whole video visible with aesthetic blur.</div>
-            </div>
-            <div class="opus-feat-card">
-                <div class="opus-feat-icon">🎭</div>
-                <div class="opus-feat-title">AI B-Roll & Hook Card</div>
-                <div class="opus-feat-desc">Instant high-impact 3-second hook title cards and ambient background video styling to maximize viewer retention.</div>
-            </div>
-            <div class="opus-feat-card">
-                <div class="opus-feat-icon">🎙️</div>
-                <div class="opus-feat-title">Enhance Speech <span class="opus-badge-new">NEW</span></div>
-                <div class="opus-feat-desc">Pro-level studio audio leveling (-14 LUFS) and noise reduction with no additional hardware required.</div>
-            </div>
-            <div class="opus-feat-card">
-                <div class="opus-feat-icon">🏷️</div>
-                <div class="opus-feat-title">Brand Templates</div>
-                <div class="opus-feat-desc">Easily select and customize viral caption styles (Hormozi, MrBeast, Neon Cyber, Submagic, Editorial Gold).</div>
-            </div>
-            <div class="opus-feat-card">
-                <div class="opus-feat-icon">📅</div>
-                <div class="opus-feat-title">Social Scheduler & Captions</div>
-                <div class="opus-feat-desc">Auto-generate punchy viral post captions and 4 high-traffic hashtags ready to paste directly to all platforms.</div>
-            </div>
-            <div class="opus-feat-card">
-                <div class="opus-feat-icon">📁</div>
-                <div class="opus-feat-title">Export to XML & SRT</div>
-                <div class="opus-feat-desc">Edit in Adobe Premiere Pro or DaVinci Resolve at ease, or download instant standard SubRip (.SRT) subtitle files.</div>
-            </div>
-            <div class="opus-feat-card">
-                <div class="opus-feat-icon">🖼️</div>
-                <div class="opus-feat-title">Thumbnail Generator <span class="opus-badge-new">NEW</span></div>
-                <div class="opus-feat-desc">Drop a link and get high-converting video thumbnails and hook frames in 1 click.</div>
-            </div>
-            <div class="opus-feat-card">
-                <div class="opus-feat-icon">🌐</div>
-                <div class="opus-feat-title">AI Multilingual Dubbing</div>
-                <div class="opus-feat-desc">Translate spoken audio into natural Indian Hinglish, English, or retain native scripts without tofu font artifacts.</div>
-            </div>
-            <div class="opus-feat-card">
-                <div class="opus-feat-icon">⚡</div>
-                <div class="opus-feat-title">Agentic Workflows & API <span class="opus-badge-pro">PRO</span></div>
-                <div class="opus-feat-desc">Programmatic video API and MCP server tools that any autonomous AI agent or workflow can call directly.</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-# =============================================================================
-# TAB 3: 🎨 BRAND TEMPLATES GALLERY
+# TAB 2: 🎨 CAPTION STYLES (REAL KINETIC PRESETS GALLERY)
 # =============================================================================
 with tab_templates:
     st.markdown(
         """
         <div style="text-align:center; margin: 1.2rem auto 2rem auto; max-width:800px;">
-            <div class="opus-hero-chip">🎨 Viral Styling</div>
+            <div class="cp-hero-chip">🎨 Kinetic Typography</div>
             <h2 style="font-family:'Plus Jakarta Sans', sans-serif; font-size:2.2rem; font-weight:800; color:#FFFFFF; margin:0 0 0.5rem 0;">
                 Signature Animated Caption Styles
             </h2>
             <p style="color:#94A3B8; font-size:1.02rem;">
-                Proven high-converting typography presets modeled after top creators like Alex Hormozi, MrBeast, and Submagic.
+                Select any style in the sidebar. All fonts auto-download and render with word-by-word animation and 3D emojis.
             </p>
         </div>
         """,
@@ -1633,54 +1697,152 @@ with tab_templates:
 
     st.markdown(
         """
-        <div class="opus-tpl-grid">
-            <div class="opus-tpl-card">
-                <div class="opus-tpl-preview" style="background:#000000; color:#39FF14; font-family:'Montserrat', sans-serif; font-size:1.5rem; text-shadow:0 0 10px rgba(57,255,20,0.5);">
+        <div class="cp-tpl-grid">
+            <div class="cp-tpl-card">
+                <div class="cp-tpl-preview" style="background:#000000; color:#39FF14; font-family:'Montserrat', sans-serif; font-size:1.5rem; text-shadow:0 0 10px rgba(57,255,20,0.5);">
                     VIRAL HOOK!
                 </div>
-                <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Opus Hormozi</div>
+                <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Pulse Hormozi</div>
                 <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:0.8rem;">High-contrast green/yellow active word cycle with bold tilted uppercase. Used by #1 finance & business creators.</div>
-                <span class="opus-badge-pro">MOST POPULAR</span>
+                <span class="cp-badge-active">ACTIVE PRESET</span>
             </div>
-            <div class="opus-tpl-card">
-                <div class="opus-tpl-preview" style="background:#141724; color:#FFD000; font-family:'Bangers', sans-serif; font-size:1.7rem; letter-spacing:1px;">
+            <div class="cp-tpl-card">
+                <div class="cp-tpl-preview" style="background:#141724; color:#FFD000; font-family:'Bangers', sans-serif; font-size:1.7rem; letter-spacing:1px;">
                     INSANE MOMENT 🔥
                 </div>
-                <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">MrBeast Hype</div>
+                <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Beast Mode</div>
                 <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:0.8rem;">Playful, high-energy impact typography with explosive contrast and animated 3D emojis.</div>
-                <span class="opus-badge-new">HIGH RETENTION</span>
+                <span class="cp-badge-active">ACTIVE PRESET</span>
             </div>
-            <div class="opus-tpl-card">
-                <div class="opus-tpl-preview" style="background:#090B14; color:#00F0FF; font-family:'Anton', sans-serif; font-size:1.6rem; text-shadow:0 0 14px rgba(0,240,255,0.7);">
+            <div class="cp-tpl-card">
+                <div class="cp-tpl-preview" style="background:#090B14; color:#00F0FF; font-family:'Anton', sans-serif; font-size:1.6rem; text-shadow:0 0 14px rgba(0,240,255,0.7);">
                     FUTURE AI 🤖
                 </div>
                 <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Neon Cyber</div>
                 <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:0.8rem;">Vibrant neon cyan & electric purple glow. Ideal for tech, crypto, gaming, and AI shorts.</div>
-                <span class="opus-badge-new">TECH FAVORITE</span>
+                <span class="cp-badge-active">ACTIVE PRESET</span>
             </div>
-            <div class="opus-tpl-card">
-                <div class="opus-tpl-preview" style="background:#121626; color:#FFE614; font-family:'Montserrat', sans-serif; font-size:1.35rem;">
+            <div class="cp-tpl-card">
+                <div class="cp-tpl-preview" style="background:#121626; color:#FFE614; font-family:'Montserrat', sans-serif; font-size:1.35rem;">
                     <span style="background:#FFE614; color:#000000; padding:0.2rem 0.6rem; border-radius:8px;">Submagic</span>
                 </div>
                 <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Submagic Pill</div>
                 <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:0.8rem;">Modern rounded pill background tracking active words with smooth color cycle.</div>
-                <span class="opus-badge-pro">MODERN CLEAN</span>
+                <span class="cp-badge-active">ACTIVE PRESET</span>
             </div>
-            <div class="opus-tpl-card">
-                <div class="opus-tpl-preview" style="background:#131210; color:#FFD048; font-family:'Playfair Display', serif; font-size:1.4rem; font-style:italic;">
+            <div class="cp-tpl-card">
+                <div class="cp-tpl-preview" style="background:#131210; color:#FFD048; font-family:'Playfair Display', serif; font-size:1.4rem; font-style:italic;">
                     Editorial Luxury
                 </div>
                 <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Editorial Gold</div>
                 <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:0.8rem;">Refined serif typography with warm gold highlights for thought leaders, podcasts, and interviews.</div>
-                <span class="opus-badge-new">LUXURY</span>
+                <span class="cp-badge-active">ACTIVE PRESET</span>
             </div>
-            <div class="opus-tpl-card">
-                <div class="opus-tpl-preview" style="background:#111522; color:#FFFFFF; font-family:'Inter', sans-serif; font-size:1.4rem;">
+            <div class="cp-tpl-card">
+                <div class="cp-tpl-preview" style="background:#111522; color:#FFFFFF; font-family:'Inter', sans-serif; font-size:1.4rem;">
                     Clean Minimal
                 </div>
-                <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Minimalist Sans</div>
+                <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Minimal Glass</div>
                 <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:0.8rem;">Subtle white subtitles with thin border shadow. Perfect for aesthetic cinematic reels.</div>
-                <span class="opus-badge-pro">TIMELESS</span>
+                <span class="cp-badge-active">ACTIVE PRESET</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# =============================================================================
+# TAB 3: ⚡ BUILT-IN FEATURES & ROADMAP (HONEST FEATURE SUITE)
+# =============================================================================
+with tab_features:
+    st.markdown(
+        """
+        <div style="text-align:center; margin: 1.2rem auto 2rem auto; max-width:800px;">
+            <div class="cp-hero-chip">⚡ Architecture & Features</div>
+            <h2 style="font-family:'Plus Jakarta Sans', sans-serif; font-size:2.2rem; font-weight:800; color:#FFFFFF; margin:0 0 0.5rem 0;">
+                Full Feature Suite & Status
+            </h2>
+            <p style="color:#94A3B8; font-size:1.02rem;">
+                Here is a transparent breakdown of all fully working production features vs. upcoming modules.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="side-section" style="font-size:0.88rem; color:#10B981;">● Active & Built-in Features (Fully Functional)</div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="cp-feature-grid">
+            <div class="cp-feat-card">
+                <div class="cp-feat-icon">📐</div>
+                <div class="cp-feat-title">AI Reframe & Canvas <span class="cp-badge-active">ACTIVE</span></div>
+                <div class="cp-feat-desc">5 layout modes: Fit Whole Video with Aesthetic Blur, Studio Uncropped, OpenCV Face Tracking, Screen+Facecam Split, and Podcast Auto.</div>
+            </div>
+            <div class="cp-feat-card">
+                <div class="cp-feat-icon">💬</div>
+                <div class="cp-feat-title">Kinetic Animated Captions <span class="cp-badge-active">ACTIVE</span></div>
+                <div class="cp-feat-desc">Word-by-word synchronized animations with karaoke color cycle, Google font auto-fetch, and custom typography presets.</div>
+            </div>
+            <div class="cp-feat-card">
+                <div class="cp-feat-icon">🔥</div>
+                <div class="cp-feat-title">3D Emojis Animation <span class="cp-badge-active">ACTIVE</span></div>
+                <div class="cp-feat-desc">Keyword-driven Fluent & Apple 3D emojis auto-spawn on spoken emotional beats with spring physics and floating animations.</div>
+            </div>
+            <div class="cp-feat-card">
+                <div class="cp-feat-icon">🎯</div>
+                <div class="cp-feat-title">Virality AI™ Scoring <span class="cp-badge-active">ACTIVE</span></div>
+                <div class="cp-feat-desc">Multi-pillar evaluation combining Opening Hook Power (45%), Story Coherence (35%), and Audio Excitement Peaks (20%).</div>
+            </div>
+            <div class="cp-feat-card">
+                <div class="cp-feat-icon">🎙️</div>
+                <div class="cp-feat-title">Studio Audio Enhancement <span class="cp-badge-active">ACTIVE</span></div>
+                <div class="cp-feat-desc">Loudnorm audio leveling normalized to -14 LUFS with voice EQ clarity, noise suppression, and background music auto-ducking.</div>
+            </div>
+            <div class="cp-feat-card">
+                <div class="cp-feat-icon">📝</div>
+                <div class="cp-feat-title">Export to Subtitles (.SRT) <span class="cp-badge-active">ACTIVE</span></div>
+                <div class="cp-feat-desc">Millisecond-accurate SubRip .SRT subtitle export for instant import into Premiere Pro, DaVinci Resolve, or CapCut.</div>
+            </div>
+            <div class="cp-feat-card">
+                <div class="cp-feat-icon">⚡</div>
+                <div class="cp-feat-title">Hardware Acceleration <span class="cp-badge-active">ACTIVE</span></div>
+                <div class="cp-feat-desc">Auto NVENC GPU encoding when available, with multi-threaded silent pre-rendering of upcoming clips in background memory.</div>
+            </div>
+            <div class="cp-feat-card">
+                <div class="cp-feat-icon">🌐</div>
+                <div class="cp-feat-title">Hinglish / English Captions <span class="cp-badge-active">ACTIVE</span></div>
+                <div class="cp-feat-desc">Zero-tofu Indian Hinglish transliteration and English auto-translation for seamless Indian & global social reach.</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="side-section" style="font-size:0.88rem; color:#F59E0B; margin-top:2rem;">⏳ In Development (Future Roadmap)</div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="cp-feature-grid">
+            <div class="cp-feat-card" style="opacity:0.85;">
+                <div class="cp-feat-icon">🎭</div>
+                <div class="cp-feat-title">AI B-Roll Insertion <span class="cp-badge-roadmap">ROADMAP</span></div>
+                <div class="cp-feat-desc">Contextual visual B-roll generated via text-to-video models to cover speech pauses and enhance retention.</div>
+            </div>
+            <div class="cp-feat-card" style="opacity:0.85;">
+                <div class="cp-feat-icon">🖼️</div>
+                <div class="cp-feat-title">Auto Thumbnail Generator <span class="cp-badge-roadmap">ROADMAP</span></div>
+                <div class="cp-feat-desc">One-click YouTube Shorts / TikTok cover image extraction with overlaid high-CTR hook typography.</div>
+            </div>
+            <div class="cp-feat-card" style="opacity:0.85;">
+                <div class="cp-feat-icon">📅</div>
+                <div class="cp-feat-title">Multi-Platform Scheduler <span class="cp-badge-roadmap">ROADMAP</span></div>
+                <div class="cp-feat-desc">Direct OAuth publishing to YouTube Shorts, Instagram Reels, and TikTok with optimal post timing.</div>
+            </div>
+            <div class="cp-feat-card" style="opacity:0.85;">
+                <div class="cp-feat-icon">🗣️</div>
+                <div class="cp-feat-title">Multi-Voice AI Dubbing <span class="cp-badge-roadmap">ROADMAP</span></div>
+                <div class="cp-feat-desc">Voice cloning and speech dubbing across 14 languages preserving the original speaker's pitch and emotion.</div>
             </div>
         </div>
         """,
@@ -1695,9 +1857,9 @@ with tab_virality:
     st.markdown(
         """
         <div style="text-align:center; margin: 1.2rem auto 2rem auto; max-width:800px;">
-            <div class="opus-hero-chip">🎯 Proprietary Algorithm</div>
+            <div class="cp-hero-chip">🎯 Proprietary Algorithm</div>
             <h2 style="font-family:'Plus Jakarta Sans', sans-serif; font-size:2.2rem; font-weight:800; color:#FFFFFF; margin:0 0 0.5rem 0;">
-                How OpusClip Virality Score™ Works
+                How ClipPulse Virality Score™ Works
             </h2>
             <p style="color:#94A3B8; font-size:1.02rem;">
                 Our AI evaluates thousands of data points across your audio, transcript, and pacing to predict which segments will generate the highest watch time and viral reach.
@@ -1711,10 +1873,10 @@ with tab_virality:
     with v_c1:
         st.markdown(
             """
-            <div class="opus-feat-card" style="border-top: 3px solid #6366F1;">
+            <div class="cp-feat-card" style="border-top: 3px solid #6366F1;">
                 <div style="font-size:2rem; font-weight:800; color:#818CF8; margin-bottom:0.3rem;">45%</div>
-                <div class="opus-feat-title">Opening Hook Power</div>
-                <div class="opus-feat-desc">The first 3 seconds determine whether viewers swipe away. The AI scans for curiosity triggers, shocking revelations, questions, and high-energy openers.</div>
+                <div class="cp-feat-title">Opening Hook Power</div>
+                <div class="cp-feat-desc">The first 3 seconds determine whether viewers swipe away. The AI scans for curiosity triggers, shocking revelations, questions, and high-energy openers.</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1722,10 +1884,10 @@ with tab_virality:
     with v_c2:
         st.markdown(
             """
-            <div class="opus-feat-card" style="border-top: 3px solid #A855F7;">
+            <div class="cp-feat-card" style="border-top: 3px solid #A855F7;">
                 <div style="font-size:2rem; font-weight:800; color:#C084FC; margin-bottom:0.3rem;">35%</div>
-                <div class="opus-feat-title">Story Coherence & Payoff</div>
-                <div class="opus-feat-desc">A short must deliver on its promise. The AI ensures the clip contains a complete standalone narrative with a clear punchline, lesson, or emotional climax.</div>
+                <div class="cp-feat-title">Story Coherence & Payoff</div>
+                <div class="cp-feat-desc">A short must deliver on its promise. The AI ensures the clip contains a complete standalone narrative with a clear punchline, lesson, or emotional climax.</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1733,10 +1895,10 @@ with tab_virality:
     with v_c3:
         st.markdown(
             """
-            <div class="opus-feat-card" style="border-top: 3px solid #10B981;">
+            <div class="cp-feat-card" style="border-top: 3px solid #10B981;">
                 <div style="font-size:2rem; font-weight:800; color:#34D399; margin-bottom:0.3rem;">20%</div>
-                <div class="opus-feat-title">Audio Energy & Heatmap</div>
-                <div class="opus-feat-desc">Calculated directly from RMS vocal peaks, laughing/reaction spikes, and YouTube's viewer replayed heatmap data to capture peak engagement.</div>
+                <div class="cp-feat-title">Audio Energy & Heatmap</div>
+                <div class="cp-feat-desc">Calculated directly from RMS vocal peaks, laughing/reaction spikes, and YouTube's viewer replayed heatmap data to capture peak engagement.</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1744,15 +1906,15 @@ with tab_virality:
 
 
 # =============================================================================
-# TAB 5: 💎 PRO HUB & WORKFLOWS
+# TAB 5: 💎 PRO EXPORTS & WORKFLOWS
 # =============================================================================
 with tab_pro:
     st.markdown(
         """
         <div style="text-align:center; margin: 1.2rem auto 2rem auto; max-width:800px;">
-            <div class="opus-hero-chip">💎 Professional Workflows</div>
+            <div class="cp-hero-chip">💎 Professional Workflows</div>
             <h2 style="font-family:'Plus Jakarta Sans', sans-serif; font-size:2.2rem; font-weight:800; color:#FFFFFF; margin:0 0 0.5rem 0;">
-                Export to Premiere, DaVinci & Beyond
+                Export to Premiere, DaVinci & CapCut
             </h2>
             <p style="color:#94A3B8; font-size:1.02rem;">
                 Built for professional video editors, social media marketing teams, and content creators.
@@ -1766,9 +1928,9 @@ with tab_pro:
     with p_c1:
         st.markdown(
             """
-            <div class="opus-feat-card">
-                <div class="opus-feat-title">📁 Adobe Premiere Pro & DaVinci XML Export</div>
-                <div class="opus-feat-desc" style="margin-bottom:0.8rem;">
+            <div class="cp-feat-card">
+                <div class="cp-feat-title">📁 Adobe Premiere Pro & DaVinci Subtitle Export</div>
+                <div class="cp-feat-desc" style="margin-bottom:0.8rem;">
                     Want to perform final fine-tuning in your NLE? Every clip provides synchronized word timestamps that can be imported directly into Premiere Pro or DaVinci Resolve.
                 </div>
                 <ul style="color:#94A3B8; font-size:0.86rem; line-height:1.6; margin-left:-1.2rem;">
@@ -1783,9 +1945,9 @@ with tab_pro:
     with p_c2:
         st.markdown(
             """
-            <div class="opus-feat-card">
-                <div class="opus-feat-title">⚡ High-Speed Hardware Acceleration</div>
-                <div class="opus-feat-desc" style="margin-bottom:0.8rem;">
+            <div class="cp-feat-card">
+                <div class="cp-feat-title">⚡ High-Speed Hardware Acceleration</div>
+                <div class="cp-feat-desc" style="margin-bottom:0.8rem;">
                     Our engine auto-detects GPU hardware acceleration and leverages Whisper-large-v3-turbo via Groq LPU:
                 </div>
                 <ul style="color:#94A3B8; font-size:0.86rem; line-height:1.6; margin-left:-1.2rem;">

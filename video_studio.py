@@ -35,6 +35,17 @@ FONT_DOWNLOAD_URLS: Dict[str, str] = {
 }
 
 STYLE_PRESETS: Dict[str, Dict[str, Any]] = {
+    "Pulse Hormozi": {
+        "mode": "hormozi_kinetic",
+        "font_file": "Montserrat-ExtraBold.ttf",
+        "font_size": 60,
+        "uppercase": True,
+        "base_text": (255, 255, 255),
+        "active_cycle": [(57, 255, 20), (255, 230, 0), (0, 240, 255)],
+        "accent_rgb": (57, 255, 20),
+        "pill_text": (12, 14, 16),
+        "tilt": True,
+    },
     "Opus Hormozi": {
         "mode": "hormozi_kinetic",
         "font_file": "Montserrat-ExtraBold.ttf",
@@ -1591,7 +1602,7 @@ def render_viral_reel(
     framing_mode: str = "full_uncropped",
     video_type: str = "full_video",
     caption_lang: str = "hinglish",
-    style_name: str = "Opus Hormozi",
+    style_name: str = "Pulse Hormozi",
     transition_style: str = "still_static",     # "still_static", "blur_whip", "flash_zoom", "cross_dissolve"
     fast_stream_mode: bool = False,
     show_captions: bool = True,
