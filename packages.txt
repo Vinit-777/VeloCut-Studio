@@ -6,5 +6,3 @@ libxext6
 libxrender1
 libxcb1
 fonts-noto-core
-fonts-deva
-nodejs
