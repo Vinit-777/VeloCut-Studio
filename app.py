@@ -335,54 +335,41 @@ st.markdown(
         font-weight: 800;
         color: #FFFFFF;
         white-space: nowrap;
-        letter-spacing: -0.025em;
+        letter-spacing: -0.02em;
         text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
-        line-height: 1.2;
+        line-height: 1.25;
+        text-transform: capitalize;
     }
     .cp-word.w1 {
-        animation: wordCycle1 12s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+        animation: wordCycle1 9s cubic-bezier(0.16, 1, 0.3, 1) infinite;
     }
     .cp-word.w2 {
-        animation: wordCycle2 12s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+        animation: wordCycle2 9s cubic-bezier(0.16, 1, 0.3, 1) infinite;
     }
     .cp-word.w3 {
-        animation: wordCycle3 12s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-    }
-    .cp-word.w4 {
-        animation: wordCycle4 12s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+        animation: wordCycle3 9s cubic-bezier(0.16, 1, 0.3, 1) infinite;
     }
     @keyframes wordCycle1 {
         0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-        21% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-        24% { opacity: 0; transform: translateY(-8px) scale(0.97); filter: blur(3px); }
-        25%, 96% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
-        99% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
+        28% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        32% { opacity: 0; transform: translateY(-8px) scale(0.97); filter: blur(3px); }
+        33.3%, 95% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
+        98% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
         100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
     }
     @keyframes wordCycle2 {
-        0%, 21% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
-        25% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-        46% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-        49% { opacity: 0; transform: translateY(-8px) scale(0.97); filter: blur(3px); }
-        50%, 100% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
+        0%, 28% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
+        33.3% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        61% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        65% { opacity: 0; transform: translateY(-8px) scale(0.97); filter: blur(3px); }
+        66.6%, 100% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
     }
     @keyframes wordCycle3 {
-        0%, 46% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
-        50% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-        71% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-        74% { opacity: 0; transform: translateY(-8px) scale(0.97); filter: blur(3px); }
-        75%, 100% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
-    }
-    @keyframes wordCycle4 {
-        0%, 71% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
-        75% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-        96% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-        99% { opacity: 0; transform: translateY(-8px) scale(0.97); filter: blur(3px); }
+        0%, 61% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
+        66.6% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        94% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        98% { opacity: 0; transform: translateY(-8px) scale(0.97); filter: blur(3px); }
         100% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
-    }
-    .cp-faster-text {
-        color: #FFFFFF;
-        white-space: nowrap;
     }
     .cp-gradient-text {
         background: linear-gradient(135deg, #FFFFFF 20%, #A5B4FC 60%, #C084FC 100%);
@@ -1518,13 +1505,11 @@ with tab_studio:
                     <span class="cp-modern-badge">
                         <span class="cp-badge-aurora"></span>
                         <span class="cp-words-grid">
-                            <span class="cp-word w1">viral shorts</span>
-                            <span class="cp-word w2">brand presence</span>
-                            <span class="cp-word w3">ready-to-post clips</span>
-                            <span class="cp-word w4">10x reach</span>
+                            <span class="cp-word w1">Viral Shorts</span>
+                            <span class="cp-word w2">Ready-To-Post Clips</span>
+                            <span class="cp-word w3">10x Reach</span>
                         </span>
                     </span>
-                    <span class="cp-faster-text">10x faster</span>
                 </div>
             </h1>
             <p class="cp-hero-sub">
