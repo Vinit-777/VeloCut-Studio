@@ -58,7 +58,7 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Anton&family=Bangers&family=Inter:wght@400;500;600;700&family=Montserrat:ital,wght@0,700;0,800;0,900;1,800;1,900&family=Playfair+Display:ital,wght@0,700;1,700;1,900&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=Poppins:wght@600;700;800;900&display=swap');
 
     /* Global Typography & Palette */
     html, body, [class*="css"] {
@@ -389,6 +389,136 @@ st.markdown(
     .stTextInput input:focus {
         border-color: #818CF8 !important;
         box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25) !important;
+    }
+
+    /* ======== FONT PATTERNS FOR CAPTION PRESETS (ORIGINAL STYLES) ======== */
+    .font-pattern-hormozi {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 900 !important;
+        text-transform: uppercase !important;
+        color: #39FF14 !important;
+        letter-spacing: 0.05em !important;
+        text-shadow: 0 0 10px rgba(57, 255, 20, 0.5) !important;
+        transform: rotate(-1.5deg);
+        display: inline-block;
+    }
+    .font-pattern-beast {
+        font-family: 'Bangers', cursive, sans-serif !important;
+        font-size: 1.25rem !important;
+        letter-spacing: 1.5px !important;
+        color: #FFD000 !important;
+        text-shadow: 1px 1px 0px #000, 2px 2px 0px #FF731D !important;
+        display: inline-block;
+    }
+    .font-pattern-neon {
+        font-family: 'Anton', sans-serif !important;
+        letter-spacing: 1.2px !important;
+        text-transform: uppercase !important;
+        color: #00F0FF !important;
+        text-shadow: 0 0 12px rgba(0, 240, 255, 0.8), 0 0 20px rgba(0, 240, 255, 0.4) !important;
+        display: inline-block;
+    }
+    .font-pattern-minimal {
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 600 !important;
+        color: #F8FAFC !important;
+        letter-spacing: 0.02em !important;
+        display: inline-block;
+    }
+    .font-pattern-submagic {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 800 !important;
+        background: #FFE614 !important;
+        color: #0A0D14 !important;
+        padding: 0.15rem 0.6rem !important;
+        border-radius: 6px !important;
+        text-transform: uppercase !important;
+        display: inline-block;
+        letter-spacing: 0.02em !important;
+    }
+    .font-pattern-editorial {
+        font-family: 'Playfair Display', serif !important;
+        font-style: italic !important;
+        font-weight: 700 !important;
+        font-size: 1.15rem !important;
+        color: #FFD048 !important;
+        text-shadow: 0 0 8px rgba(255, 208, 72, 0.4) !important;
+        display: inline-block;
+    }
+
+    /* BaseWeb Selectbox Dropdown Menu Options Styled in their EXACT Font Patterns */
+    ul[role="listbox"] li:nth-child(1),
+    div[data-baseweb="popover"] li:nth-child(1) {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 900 !important;
+        text-transform: uppercase !important;
+        color: #39FF14 !important;
+        letter-spacing: 0.05em !important;
+        text-shadow: 0 0 8px rgba(57, 255, 20, 0.45) !important;
+        background: #090B12 !important;
+        padding: 10px 14px !important;
+    }
+    ul[role="listbox"] li:nth-child(2),
+    div[data-baseweb="popover"] li:nth-child(2) {
+        font-family: 'Bangers', cursive, sans-serif !important;
+        font-size: 1.25rem !important;
+        letter-spacing: 1.5px !important;
+        color: #FFD000 !important;
+        text-shadow: 1px 1px 0px #000, 2px 2px 0px #FF731D !important;
+        background: #10131E !important;
+        padding: 10px 14px !important;
+    }
+    ul[role="listbox"] li:nth-child(3),
+    div[data-baseweb="popover"] li:nth-child(3) {
+        font-family: 'Anton', sans-serif !important;
+        font-size: 1.15rem !important;
+        letter-spacing: 1.2px !important;
+        text-transform: uppercase !important;
+        color: #00F0FF !important;
+        text-shadow: 0 0 10px rgba(0, 240, 255, 0.8) !important;
+        background: #090E1A !important;
+        padding: 10px 14px !important;
+    }
+    ul[role="listbox"] li:nth-child(4),
+    div[data-baseweb="popover"] li:nth-child(4) {
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        color: #F8FAFC !important;
+        background: #0F1322 !important;
+        padding: 10px 14px !important;
+    }
+    ul[role="listbox"] li:nth-child(5),
+    div[data-baseweb="popover"] li:nth-child(5) {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 800 !important;
+        color: #0A0D14 !important;
+        background: #FFE614 !important;
+        border-radius: 6px !important;
+        margin: 4px 8px !important;
+        padding: 8px 14px !important;
+        text-transform: uppercase !important;
+    }
+    ul[role="listbox"] li:nth-child(6),
+    div[data-baseweb="popover"] li:nth-child(6) {
+        font-family: 'Playfair Display', serif !important;
+        font-style: italic !important;
+        font-weight: 700 !important;
+        font-size: 1.15rem !important;
+        color: #FFD048 !important;
+        text-shadow: 0 0 8px rgba(255, 208, 72, 0.4) !important;
+        background: #14120F !important;
+        padding: 10px 14px !important;
+    }
+
+    .cp-font-preview-box {
+        border-radius: 12px;
+        padding: 0.75rem 0.9rem;
+        text-align: center;
+        margin-top: 0.55rem;
+        margin-bottom: 0.65rem;
+        backdrop-filter: blur(16px);
+        transition: all 0.25s ease;
     }
 
     /* ======== ETA BAR ======== */
@@ -1034,7 +1164,62 @@ with st.sidebar:
         if "Pulse Hormozi" in style_list:
             style_list.remove("Pulse Hormozi")
             style_list.insert(0, "Pulse Hormozi")
-        style_name = st.selectbox("Caption Template", style_list, index=0, label_visibility="collapsed")
+        if "Opus Hormozi" in style_list:
+            style_list.remove("Opus Hormozi")
+
+        if "active_caption_preset" not in st.session_state:
+            st.session_state.active_caption_preset = style_list[0]
+
+        cur_idx = style_list.index(st.session_state.active_caption_preset) if st.session_state.active_caption_preset in style_list else 0
+        style_name = st.selectbox(
+            "Caption Template",
+            style_list,
+            index=cur_idx,
+            label_visibility="collapsed",
+            key="sb_caption_template_select",
+        )
+        st.session_state.active_caption_preset = style_name
+
+        # Live Font Pattern Badge — Written in each font's exact authentic typography pattern!
+        font_style_previews = {
+            "Pulse Hormozi": """
+                <div class="cp-font-preview-box" style="background:#05070B; border:1.5px solid #39FF14; box-shadow:0 0 16px rgba(57,255,20,0.3);">
+                    <div class="font-pattern-hormozi" style="font-size:1.4rem;">PULSE HORMOZI</div>
+                    <div style="font-size:0.72rem; color:#86EFAC; margin-top:5px; font-weight:600;">Font: Montserrat-ExtraBold (Tilted Green)</div>
+                </div>
+            """,
+            "Beast Mode": """
+                <div class="cp-font-preview-box" style="background:#10131E; border:1.5px solid #FFD000; box-shadow:0 0 16px rgba(255,208,0,0.3);">
+                    <div class="font-pattern-beast" style="font-size:1.6rem;">BEAST MODE 🔥</div>
+                    <div style="font-size:0.72rem; color:#FDE68A; margin-top:4px; font-weight:600;">Font: Bangers-Regular (Comic Impact)</div>
+                </div>
+            """,
+            "Neon Cyber": """
+                <div class="cp-font-preview-box" style="background:#070A14; border:1.5px solid #00F0FF; box-shadow:0 0 18px rgba(0,240,255,0.35);">
+                    <div class="font-pattern-neon" style="font-size:1.4rem;">NEON CYBER 🤖</div>
+                    <div style="font-size:0.72rem; color:#7DD3FC; margin-top:5px; font-weight:600;">Font: Anton-Regular (Electric Cyan)</div>
+                </div>
+            """,
+            "Minimal Glass": """
+                <div class="cp-font-preview-box" style="background:#0F1322; border:1.5px solid rgba(255,255,255,0.25); box-shadow:0 0 14px rgba(255,255,255,0.12);">
+                    <div class="font-pattern-minimal" style="font-size:1.2rem;">Minimal Glass</div>
+                    <div style="font-size:0.72rem; color:#94A3B8; margin-top:5px; font-weight:600;">Font: Poppins-ExtraBold (Clean Sans)</div>
+                </div>
+            """,
+            "Submagic Pill": """
+                <div class="cp-font-preview-box" style="background:#0E111C; border:1.5px solid #FFE614; box-shadow:0 0 16px rgba(255,230,20,0.3);">
+                    <div class="font-pattern-submagic" style="font-size:1.15rem;">SUBMAGIC PILL</div>
+                    <div style="font-size:0.72rem; color:#FDE68A; margin-top:7px; font-weight:600;">Font: Montserrat-ExtraBold (Active Yellow Pill)</div>
+                </div>
+            """,
+            "Editorial Gold": """
+                <div class="cp-font-preview-box" style="background:#12100C; border:1.5px solid #FFD048; box-shadow:0 0 16px rgba(255,208,72,0.3);">
+                    <div class="font-pattern-editorial" style="font-size:1.35rem;">Editorial Gold</div>
+                    <div style="font-size:0.72rem; color:#FDE68A; margin-top:5px; font-weight:600;">Font: PlayfairDisplay-BoldItalic (Luxury Serif)</div>
+                </div>
+            """,
+        }
+        st.markdown(font_style_previews.get(style_name, ""), unsafe_allow_html=True)
 
         st.markdown('<div class="side-section">Camera & Motion</div>', unsafe_allow_html=True)
         trans_map = {
@@ -1702,7 +1887,7 @@ with tab_templates:
                 <div class="cp-tpl-preview" style="background:#000000; color:#39FF14; font-family:'Montserrat', sans-serif; font-size:1.5rem; text-shadow:0 0 10px rgba(57,255,20,0.5);">
                     VIRAL HOOK!
                 </div>
-                <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Pulse Hormozi</div>
+                <div><span class="font-pattern-hormozi" style="font-size:1.25rem; margin-bottom:0.25rem;">Pulse Hormozi</span></div>
                 <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:0.8rem;">High-contrast green/yellow active word cycle with bold tilted uppercase. Used by #1 finance & business creators.</div>
                 <span class="cp-badge-active">ACTIVE PRESET</span>
             </div>
@@ -1710,7 +1895,7 @@ with tab_templates:
                 <div class="cp-tpl-preview" style="background:#141724; color:#FFD000; font-family:'Bangers', sans-serif; font-size:1.7rem; letter-spacing:1px;">
                     INSANE MOMENT 🔥
                 </div>
-                <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Beast Mode</div>
+                <div><span class="font-pattern-beast" style="font-size:1.45rem; margin-bottom:0.25rem;">Beast Mode</span></div>
                 <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:0.8rem;">Playful, high-energy impact typography with explosive contrast and animated 3D emojis.</div>
                 <span class="cp-badge-active">ACTIVE PRESET</span>
             </div>
@@ -1718,7 +1903,7 @@ with tab_templates:
                 <div class="cp-tpl-preview" style="background:#090B14; color:#00F0FF; font-family:'Anton', sans-serif; font-size:1.6rem; text-shadow:0 0 14px rgba(0,240,255,0.7);">
                     FUTURE AI 🤖
                 </div>
-                <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Neon Cyber</div>
+                <div><span class="font-pattern-neon" style="font-size:1.3rem; margin-bottom:0.25rem;">Neon Cyber</span></div>
                 <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:0.8rem;">Vibrant neon cyan & electric purple glow. Ideal for tech, crypto, gaming, and AI shorts.</div>
                 <span class="cp-badge-active">ACTIVE PRESET</span>
             </div>
@@ -1726,7 +1911,7 @@ with tab_templates:
                 <div class="cp-tpl-preview" style="background:#121626; color:#FFE614; font-family:'Montserrat', sans-serif; font-size:1.35rem;">
                     <span style="background:#FFE614; color:#000000; padding:0.2rem 0.6rem; border-radius:8px;">Submagic</span>
                 </div>
-                <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Submagic Pill</div>
+                <div><span class="font-pattern-submagic" style="font-size:1.05rem; margin-bottom:0.35rem;">Submagic Pill</span></div>
                 <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:0.8rem;">Modern rounded pill background tracking active words with smooth color cycle.</div>
                 <span class="cp-badge-active">ACTIVE PRESET</span>
             </div>
@@ -1734,7 +1919,7 @@ with tab_templates:
                 <div class="cp-tpl-preview" style="background:#131210; color:#FFD048; font-family:'Playfair Display', serif; font-size:1.4rem; font-style:italic;">
                     Editorial Luxury
                 </div>
-                <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Editorial Gold</div>
+                <div><span class="font-pattern-editorial" style="font-size:1.35rem; margin-bottom:0.25rem;">Editorial Gold</span></div>
                 <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:0.8rem;">Refined serif typography with warm gold highlights for thought leaders, podcasts, and interviews.</div>
                 <span class="cp-badge-active">ACTIVE PRESET</span>
             </div>
@@ -1742,7 +1927,7 @@ with tab_templates:
                 <div class="cp-tpl-preview" style="background:#111522; color:#FFFFFF; font-family:'Inter', sans-serif; font-size:1.4rem;">
                     Clean Minimal
                 </div>
-                <div style="font-weight:700; font-size:1.05rem; color:#FFFFFF; margin-bottom:0.25rem;">Minimal Glass</div>
+                <div><span class="font-pattern-minimal" style="font-size:1.2rem; margin-bottom:0.25rem;">Minimal Glass</span></div>
                 <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:0.8rem;">Subtle white subtitles with thin border shadow. Perfect for aesthetic cinematic reels.</div>
                 <span class="cp-badge-active">ACTIVE PRESET</span>
             </div>
