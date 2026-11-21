@@ -1452,11 +1452,16 @@ def extract_video_segment(
             source,
         ]
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=85)
-        if res.returncode == 0 and Path(raw_dl).exists() and Path(raw_dl).stat().st_size > 20000:
+        dl_matches = [
+            m for m in _glob.glob(str(Path(out_path).with_name(Path(out_path).stem + "_dl.*")))
+            if Path(m).stat().st_size > 20000
+        ]
+        if res.returncode == 0 and dl_matches:
+            raw_file = dl_matches[0]
             subprocess.run(
                 [
                     "ffmpeg", "-y", "-v", "error",
-                    "-i", raw_dl,
+                    "-i", raw_file,
                     "-c:v", "libx264", "-preset", "superfast", "-crf", "15", "-pix_fmt", "yuv420p",
                     "-c:a", "aac", "-b:a", "192k",
                     "-avoid_negative_ts", "make_zero",
@@ -1464,10 +1469,11 @@ def extract_video_segment(
                 ],
                 check=True,
             )
-            try:
-                Path(raw_dl).unlink()
-            except OSError:
-                pass
+            for m in dl_matches:
+                try:
+                    Path(m).unlink()
+                except OSError:
+                    pass
             return out_path
 
         full_tmpl = str(Path(out_path).with_name(Path(out_path).stem + "_full.%(ext)s"))
@@ -1720,34 +1726,56 @@ def render_viral_reel(
     has_music = bool(bg_music_path and Path(bg_music_path).exists())
     music_input_args = ["-stream_loop", "-1", "-i", bg_music_path] if has_music else []
 
+    has_audio = False
+    try:
+        p_a = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_type", "-of", "csv=p=0", seg_path],
+            capture_output=True, text=True, timeout=8
+        )
+        has_audio = bool(p_a.stdout.strip())
+    except Exception:
+        has_audio = True
+
     fc_parts = [f"[0:v]{v_filter}[v_out]"]
-    if has_music:
-        va = (
-            f"[1:a]{audio_trim},loudnorm=I=-14:TP=-1.5:LRA=11,"
-            f"afade=t=in:st=0:d=0.18:curve=esin,"
-            f"afade=t=out:st={voice_fade_st:.2f}:d={voice_fade_d:.2f}:curve=esin"
-            f"{f',apad=pad_dur={outro_tail_s:.2f}' if outro_tail_s > 0 else ''}[va]"
-            if audio_polish
-            else f"[1:a]{voice_env}[va]"
-        )
-        fc_parts.append(va)
-        fc_parts.append("[2:a]volume=0.11[ma]")
-        mix_fade_st = max(0.0, actual_dur - 0.10)
-        mix_fade_d = max(0.60, outro_tail_s)
-        fc_parts.append(
-            f"[va][ma]amix=inputs=2:duration=first:dropout_transition=2,"
-            f"afade=t=out:st={mix_fade_st:.2f}:d={mix_fade_d:.2f}:curve=esin[a_out]"
-        )
-    else:
-        if audio_polish:
-            fc_parts.append(
+    if has_audio:
+        if has_music:
+            va = (
                 f"[1:a]{audio_trim},loudnorm=I=-14:TP=-1.5:LRA=11,"
                 f"afade=t=in:st=0:d=0.18:curve=esin,"
+                f"afade=t=out:st={voice_fade_st:.2f}:d={voice_fade_d:.2f}:curve=esin"
+                f"{f',apad=pad_dur={outro_tail_s:.2f}' if outro_tail_s > 0 else ''}[va]"
+                if audio_polish
+                else f"[1:a]{voice_env}[va]"
+            )
+            fc_parts.append(va)
+            fc_parts.append("[2:a]volume=0.11[ma]")
+            mix_fade_st = max(0.0, actual_dur - 0.10)
+            mix_fade_d = max(0.60, outro_tail_s)
+            fc_parts.append(
+                f"[va][ma]amix=inputs=2:duration=first:dropout_transition=2,"
+                f"afade=t=out:st={mix_fade_st:.2f}:d={mix_fade_d:.2f}:curve=esin[a_out]"
+            )
+        else:
+            if audio_polish:
+                fc_parts.append(
+                    f"[1:a]{audio_trim},loudnorm=I=-14:TP=-1.5:LRA=11,"
+                    f"afade=t=in:st=0:d=0.18:curve=esin,"
+                    f"afade=t=out:st={voice_fade_st:.2f}:d={voice_fade_d:.2f}:curve=esin"
+                    f"{f',apad=pad_dur={outro_tail_s:.2f}' if outro_tail_s > 0 else ''}[a_out]"
+                )
+            else:
+                fc_parts.append(f"[1:a]{voice_env}[a_out]")
+    else:
+        if has_music:
+            fc_parts.append(
+                f"[2:a]{audio_trim},volume=0.35,afade=t=in:st=0:d=0.25:curve=esin,"
                 f"afade=t=out:st={voice_fade_st:.2f}:d={voice_fade_d:.2f}:curve=esin"
                 f"{f',apad=pad_dur={outro_tail_s:.2f}' if outro_tail_s > 0 else ''}[a_out]"
             )
         else:
-            fc_parts.append(f"[1:a]{voice_env}[a_out]")
+            fc_parts.append(
+                f"anullsrc=channel_layout=stereo:sample_rate=44100,atrim=0:{actual_dur + outro_tail_s:.3f}[a_out]"
+            )
 
     cmd = [
         "ffmpeg", "-y", "-v", "error",

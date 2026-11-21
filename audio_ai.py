@@ -300,7 +300,7 @@ def _fetch_youtube_fast_metadata(
         "--no-warnings",
         url,
     ]
-    res = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
     if res.returncode != 0 or not res.stdout.strip():
         return None
 
@@ -583,7 +583,20 @@ def extract_compressed_audio(
     if max_scan_seconds:
         ff_cmd += ["-t", f"{max_scan_seconds:.1f}"]
     ff_cmd += ["-vn", "-ac", "1", "-ar", "16000", "-b:a", "32k", mp3_path]
-    subprocess.run(ff_cmd, check=True)
+    ff_res = subprocess.run(ff_cmd, capture_output=True)
+    if ff_res.returncode != 0 or not Path(mp3_path).exists() or Path(mp3_path).stat().st_size < 1000:
+        dur_raw = _get_media_duration(input_media) or (max_scan_seconds or 30.0)
+        dur = min(dur_raw, max_scan_seconds or 180.0)
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-v", "error",
+                "-f", "lavfi", "-i", "anullsrc=r=16000:cl=mono",
+                "-t", f"{dur:.2f}",
+                "-ac", "1", "-ar", "16000", "-b:a", "32k",
+                mp3_path,
+            ],
+            check=True,
+        )
 
     size_mb = Path(mp3_path).stat().st_size / (1024 * 1024)
     if source_type != "local" and Path(input_media).exists():

@@ -5,9 +5,9 @@ import subprocess
 from pathlib import Path
 from dotenv import load_dotenv
 
-print("=" * 55)
-print("       ClipPulse — Environment Health Check")
-print("=" * 55)
+print("=" * 60)
+print("       VeloCut Studio / ClipPulse — Environment Health Check")
+print("=" * 60)
 
 # 1. Check .env & Groq API Key
 load_dotenv()
@@ -29,7 +29,7 @@ if ffmpeg_path and ffprobe_path:
     if "h264_nvenc" in enc:
         print("[OK] NVIDIA GPU encoder (h264_nvenc) available — ULTRA-FAST rendering enabled!")
     else:
-        print("[INFO] Using CPU encoder (libx264 ultrafast) — still fast (~6-10s per clip)")
+        print("[INFO] Using CPU encoder (libx264 ultrafast) — clean fast rendering")
 else:
     print("[FAIL] FFmpeg not found. Restart VS Code or run: winget install -e --id Gyan.FFmpeg")
 
@@ -43,6 +43,9 @@ packages = [
     ("numpy", "numpy"),
     ("scipy", "scipy"),
     ("plotly", "plotly"),
+    ("PIL", "pillow"),
+    ("dotenv", "python-dotenv"),
+    ("deno", "deno"),
 ]
 for mod, name in packages:
     try:
@@ -52,7 +55,7 @@ for mod, name in packages:
     except Exception as e:
         print(f"[FAIL] {name} missing: {e}")
 
-# 4. Check MediaPipe API mode (newer 0.10.31+ uses Tasks API instead of mp.solutions)
+# 4. Check MediaPipe API mode
 try:
     import mediapipe as mp
     has_solutions = hasattr(mp, "solutions")
@@ -63,10 +66,14 @@ except Exception:
 
 # 5. Check assets folder
 assets = Path("assets")
-fonts = list(assets.glob("*.ttf")) if assets.exists() else []
-videos = list(assets.glob("*.mp4")) if assets.exists() else []
+fonts = list(assets.glob("*.ttf")) + list((assets / "fonts").glob("*.ttf"))
+videos = list(assets.glob("*.mp4"))
+emojis_3d = list((assets / "emojis_3d").glob("*.png"))
+tflite = list(assets.glob("*.tflite"))
 print(f"[{'OK' if fonts else 'WARN'}] Fonts in assets/: {[f.name for f in fonts]}")
 print(f"[{'OK' if videos else 'WARN'}] Sample videos in assets/: {[v.name for v in videos]}")
+print(f"[{'OK' if emojis_3d else 'WARN'}] 3D emojis in assets/emojis_3d/: {len(emojis_3d)} icons")
+print(f"[{'OK' if tflite else 'WARN'}] BlazeFace model in assets/: {[m.name for m in tflite]}")
 
 # 6. Live Groq API Ping
 if api_key.startswith("gsk_"):
@@ -76,11 +83,26 @@ if api_key.startswith("gsk_"):
         res = client.chat.completions.create(
             model="openai/gpt-oss-20b",
             messages=[{"role": "user", "content": "Reply with only the word READY"}],
-            max_tokens=16,
+            max_tokens=64,
             reasoning_effort="low",
         )
-        print(f"[OK] Live Groq API test passed -> {res.choices[0].message.content.strip()}")
+        ans = (res.choices[0].message.content or "").strip()
+        print(f"[OK] Live Groq API test passed -> {ans}")
     except Exception as e:
         print(f"[FAIL] Groq API test error: {e}")
 
-print("=" * 55)
+# 7. Live YouTube Unlock Test
+try:
+    from yt_auth import test_youtube_access, resolve_cookies_path
+    c_path = resolve_cookies_path()
+    c_status = f"with cookies ({c_path.name})" if c_path.exists() and c_path.stat().st_size > 100 else "direct mode"
+    print(f"[INFO] Testing YouTube connectivity ({c_status})...")
+    ok, detail = test_youtube_access()
+    if ok:
+        print(f"[OK] YouTube unlocked -> {detail}")
+    else:
+        print(f"[WARN] YouTube check failed: {detail}")
+except Exception as e:
+    print(f"[WARN] YouTube check error: {e}")
+
+print("=" * 60)

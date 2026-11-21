@@ -24,6 +24,10 @@ try:
 except Exception:
     pass
 
+for _dir in ("temp", "outputs", "assets", "assets/fonts", "assets/emojis", "assets/emojis_3d"):
+    Path(_dir).mkdir(parents=True, exist_ok=True)
+
+from yt_auth import resolve_cookies_path, test_youtube_access
 from audio_ai import analyze_video
 from video_studio import (
     render_viral_reel,
@@ -758,6 +762,80 @@ with st.sidebar:
         bg_save.write_bytes(bg_music_file.getbuffer())
         bg_music_path = str(bg_save)
 
+    st.markdown('<div class="side-section">AI & Cloud Authentication</div>', unsafe_allow_html=True)
+    groq_cur = os.environ.get("GROQ_API_KEY", "").strip()
+    is_groq_ready = groq_cur.startswith("gsk_") and len(groq_cur) > 20
+    if is_groq_ready:
+        st.markdown(
+            '<div style="font-size:0.75rem; color:#10B981; font-weight:600; margin-bottom:4px;">'
+            '● Groq AI Connected'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            '<div style="font-size:0.75rem; color:#F59E0B; font-weight:600; margin-bottom:4px;">'
+            '▲ Groq API Key Required'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
+    entered_groq = st.text_input(
+        "Groq API Key",
+        value=groq_cur,
+        type="password",
+        placeholder="gsk_...",
+        label_visibility="collapsed",
+        help="Free API key from console.groq.com",
+        key="groq_key_input",
+    )
+    if entered_groq.strip() and entered_groq.strip() != groq_cur:
+        os.environ["GROQ_API_KEY"] = entered_groq.strip()
+        st.rerun()
+
+    cookies_cand = resolve_cookies_path()
+    has_cookies = cookies_cand.exists() and cookies_cand.stat().st_size > 100
+    if has_cookies:
+        st.markdown(
+            f'<div style="font-size:0.75rem; color:#10B981; font-weight:600; margin-top:6px; margin-bottom:4px;">'
+            f'● YouTube Cookies Active ({cookies_cand.name})'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            '<div style="font-size:0.75rem; color:#94A3B8; font-weight:500; margin-top:6px; margin-bottom:4px;">'
+            '○ YouTube: Direct Mode'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
+    with st.expander("YouTube Cloud Cookies", expanded=False):
+        st.caption("When hosted on Streamlit Cloud, YouTube may require cookies to bypass datacenter IP blocks:")
+        uploaded_cookie = st.file_uploader("Upload cookies.txt", type=["txt"], key="cookie_uploader")
+        if uploaded_cookie is not None:
+            Path("cookies.txt").write_bytes(uploaded_cookie.getbuffer())
+            st.success("cookies.txt saved and activated!")
+            st.rerun()
+
+        pasted_cookies = st.text_area("Or Paste Cookie Content", placeholder="# Netscape HTTP Cookie File...", height=60, key="paste_cookie_box")
+        c_btn1, c_btn2 = st.columns(2)
+        with c_btn1:
+            if st.button("Apply Cookies", use_container_width=True, key="btn_apply_cookie"):
+                if len(pasted_cookies.strip()) > 50:
+                    Path("cookies.txt").write_text(pasted_cookies.strip(), encoding="utf-8")
+                    st.success("Cookies applied!")
+                    st.rerun()
+                else:
+                    st.warning("Paste valid cookie content.")
+        with c_btn2:
+            if st.button("Test YouTube", use_container_width=True, key="btn_test_yt"):
+                ok, detail = test_youtube_access()
+                if ok:
+                    st.success(f"YouTube OK: {detail[:28]}...")
+                else:
+                    st.error(f"Error: {detail[:60]}")
+
 
 # =============================================================================
 # TOP NAVIGATION BAR & HERO
@@ -920,13 +998,15 @@ with tab_local:
             label_visibility="collapsed",
         )
     with loc_col2:
-        sample_exists = Path("assets/sample.mp4").exists()
+        sample_path = Path("assets/sample.mp4")
+        sample_exists = sample_path.exists() and sample_path.stat().st_size > 100000
         if st.button("Use Sample Video", use_container_width=True, disabled=not sample_exists):
-            source_to_run = str(Path("assets/sample.mp4").resolve())
+            source_to_run = str(sample_path.resolve())
             trigger_analysis = True
 
     if uploaded_vid is not None:
         if st.button("Generate Short from Upload", type="primary", key="btn_upload"):
+            Path("temp").mkdir(parents=True, exist_ok=True)
             save_path = Path("temp") / f"upload_{uploaded_vid.name}"
             if not save_path.exists() or save_path.stat().st_size != uploaded_vid.size:
                 save_path.write_bytes(uploaded_vid.getbuffer())
@@ -980,42 +1060,53 @@ if trigger_analysis and source_to_run:
                         pass
             except Exception as e:
                 err_lower = str(e).lower()
-                is_ai_scoring_err = any(
+                is_yt_bot_err = any(
                     tok in err_lower
-                    for tok in (
-                        "groq",
-                        "json_validate_failed",
-                        "highlight scoring",
-                        "comply",
-                        "rate_limit",
-                        "429",
-                        "400",
-                    )
+                    for tok in ("sign in to confirm", "confirm you're not a bot", "http error 429", "unable to download api page")
                 )
-                if is_ai_scoring_err or not str(source_to_run).startswith(("http://", "https://")):
-                    with st.spinner("Analyzing audio peaks to select top moments..."):
-                        energy_curve, probed_dur = _fast_audio_energy_curve(source_to_run)
-                        fallback_res = {
-                            "audio_info": {
-                                "source": source_to_run,
-                                "title": Path(source_to_run).stem if not str(source_to_run).startswith(("http://", "https://")) else "",
-                                "duration": probed_dur,
-                            },
-                            "energy_curve": energy_curve,
-                            "clips": [],
-                        }
-                        result = _ensure_fallback_clips(
-                            fallback_res,
-                            source_to_run,
-                            min_dur,
-                            max_dur,
-                            num_clips=3,
-                            skip_llm_title=True,
-                        )
-                    st.session_state.analysis = result
-                    st.session_state.active_source = source_to_run
+                if is_yt_bot_err:
+                    st.error(
+                        "⚠️ **YouTube Cloud Bot Check**: YouTube is requiring authentication for this cloud IP. "
+                        "Please paste your cookies in the sidebar under **'YouTube Cloud Cookies'** "
+                        "or add `YOUTUBE_COOKIES` in your Streamlit Cloud Secrets."
+                    )
                 else:
-                    st.error(f"Could not process this video. Please verify the link or try uploading the file. ({e})")
+                    is_ai_scoring_err = any(
+                        tok in err_lower
+                        for tok in (
+                            "groq",
+                            "json_validate_failed",
+                            "highlight scoring",
+                            "comply",
+                            "rate_limit",
+                            "429",
+                            "400",
+                        )
+                    )
+                    if is_ai_scoring_err or not str(source_to_run).startswith(("http://", "https://")):
+                        with st.spinner("Analyzing audio peaks to select top moments..."):
+                            energy_curve, probed_dur = _fast_audio_energy_curve(source_to_run)
+                            fallback_res = {
+                                "audio_info": {
+                                    "source": source_to_run,
+                                    "title": Path(source_to_run).stem if not str(source_to_run).startswith(("http://", "https://")) else "",
+                                    "duration": probed_dur,
+                                },
+                                "energy_curve": energy_curve,
+                                "clips": [],
+                            }
+                            result = _ensure_fallback_clips(
+                                fallback_res,
+                                source_to_run,
+                                min_dur,
+                                max_dur,
+                                num_clips=3,
+                                skip_llm_title=True,
+                            )
+                        st.session_state.analysis = result
+                        st.session_state.active_source = source_to_run
+                    else:
+                        st.error(f"Could not process this video. Please verify the link or try uploading the file. ({e})")
 
         if st.session_state.analysis and st.session_state.analysis.get("clips"):
             a_info = st.session_state.analysis["audio_info"]
