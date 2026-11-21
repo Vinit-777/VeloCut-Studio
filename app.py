@@ -271,7 +271,7 @@ st.markdown(
         font-weight: 800;
         letter-spacing: -0.035em;
         color: #FFFFFF;
-        line-height: 1.22;
+        line-height: 1.24;
         margin: 0;
     }
     .cp-title-top {
@@ -281,29 +281,31 @@ st.markdown(
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 0.75rem;
+        gap: 0.65rem;
         flex-wrap: wrap;
-        margin-top: 0.35rem;
+        margin-top: 0.4rem;
         vertical-align: middle;
     }
-    .cp-morph-pill {
+
+    /* Modern sleek rectangular glass badge (non-pill, rectangular with crisp 10px corners) */
+    .cp-modern-badge {
         position: relative;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        height: clamp(3.2rem, 5.0vw, 4.2rem);
-        border-radius: 9999px;
-        overflow: hidden;
-        border: 1.5px solid rgba(255, 255, 255, 0.24);
-        box-shadow: 0 14px 44px rgba(0, 0, 0, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+        vertical-align: middle;
+        margin: 0 0.2rem;
+        padding: 0.18rem 1.15rem;
+        border-radius: 10px;
+        background: rgba(16, 21, 35, 0.82);
+        border: 1.5px solid rgba(129, 140, 248, 0.4);
+        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.6), inset 0 0 16px rgba(99, 102, 241, 0.2);
         backdrop-filter: blur(28px) saturate(180%);
         -webkit-backdrop-filter: blur(28px) saturate(180%);
-        background: rgba(16, 21, 33, 0.72);
-        box-sizing: border-box;
-        vertical-align: middle;
-        animation: cpPillWidthMorph 12.5s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+        overflow: hidden;
+        line-height: 1.2;
     }
-    .cp-pill-aurora {
+    .cp-badge-aurora {
         position: absolute;
         inset: -80%;
         background: radial-gradient(circle at 25% 35%, rgba(244, 114, 182, 0.55) 0%, transparent 45%),
@@ -315,71 +317,72 @@ st.markdown(
         animation: cpAuroraSwirl 10s ease-in-out infinite alternate;
         pointer-events: none;
     }
-    .cp-pill-sheen {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 48%;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 100%);
-        border-radius: 9999px 9999px 0 0;
-        pointer-events: none;
-        z-index: 1;
-    }
     @keyframes cpAuroraSwirl {
         0% { transform: rotate(0deg) scale(1.0) translate(0px, 0px); }
         50% { transform: rotate(180deg) scale(1.35) translate(-25px, 15px); }
         100% { transform: rotate(360deg) scale(1.05) translate(15px, -15px); }
     }
-    .cp-rotator-frame {
+    .cp-words-grid {
+        display: inline-grid;
+        place-items: center;
         position: relative;
         z-index: 2;
-        height: 100%;
-        width: 100%;
-        overflow: hidden;
     }
-    .cp-rotator-track {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        width: 100%;
-        animation: cpRollWords 12.5s cubic-bezier(0.77, 0, 0.175, 1) infinite;
-    }
-    .cp-rotator-word {
-        height: clamp(3.2rem, 5.0vw, 4.2rem);
-        min-height: clamp(3.2rem, 5.0vw, 4.2rem);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: clamp(2.0rem, 4.2vw, 3.2rem);
+    .cp-word {
+        grid-area: 1 / 1;
+        font-family: inherit;
+        font-size: 1em;
         font-weight: 800;
         color: #FFFFFF;
         white-space: nowrap;
-        padding: 0 1.6rem;
-        text-shadow: 0 2px 16px rgba(0, 0, 0, 0.7);
         letter-spacing: -0.025em;
-        box-sizing: border-box;
+        text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
+        line-height: 1.2;
+    }
+    .cp-word.w1 {
+        animation: wordCycle1 12s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    .cp-word.w2 {
+        animation: wordCycle2 12s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    .cp-word.w3 {
+        animation: wordCycle3 12s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    .cp-word.w4 {
+        animation: wordCycle4 12s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    @keyframes wordCycle1 {
+        0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        21% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        24% { opacity: 0; transform: translateY(-8px) scale(0.97); filter: blur(3px); }
+        25%, 96% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
+        99% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
+        100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+    @keyframes wordCycle2 {
+        0%, 21% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
+        25% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        46% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        49% { opacity: 0; transform: translateY(-8px) scale(0.97); filter: blur(3px); }
+        50%, 100% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
+    }
+    @keyframes wordCycle3 {
+        0%, 46% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
+        50% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        71% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        74% { opacity: 0; transform: translateY(-8px) scale(0.97); filter: blur(3px); }
+        75%, 100% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
+    }
+    @keyframes wordCycle4 {
+        0%, 71% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
+        75% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        96% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        99% { opacity: 0; transform: translateY(-8px) scale(0.97); filter: blur(3px); }
+        100% { opacity: 0; transform: translateY(8px) scale(0.97); filter: blur(3px); }
     }
     .cp-faster-text {
         color: #FFFFFF;
         white-space: nowrap;
-    }
-    @keyframes cpRollWords {
-        0%, 16% { transform: translateY(0); }
-        20%, 36% { transform: translateY(-100%); }
-        40%, 56% { transform: translateY(-200%); }
-        60%, 76% { transform: translateY(-300%); }
-        80%, 96% { transform: translateY(-400%); }
-        100% { transform: translateY(-500%); }
-    }
-    @keyframes cpPillWidthMorph {
-        0%, 16% { width: 15.2ch; }
-        20%, 36% { width: 16.0ch; }
-        40%, 56% { width: 22.8ch; }
-        60%, 76% { width: 13.0ch; }
-        80%, 96% { width: 21.6ch; }
-        100% { width: 15.2ch; }
     }
     .cp-gradient-text {
         background: linear-gradient(135deg, #FFFFFF 20%, #A5B4FC 60%, #C084FC 100%);
@@ -397,16 +400,13 @@ st.markdown(
         .cp-hero-title {
             font-size: 1.85rem !important;
         }
-        .cp-rotator-word {
-            font-size: 1.6rem !important;
-            padding: 0 1.1rem;
+        .cp-title-bottom {
+            flex-direction: column;
+            gap: 0.4rem;
         }
-        .cp-morph-pill {
-            height: 2.9rem !important;
-        }
-        .cp-rotator-word {
-            height: 2.9rem !important;
-            min-height: 2.9rem !important;
+        .cp-modern-badge {
+            padding: 0.15rem 0.85rem;
+            border-radius: 8px;
         }
     }
 
@@ -1513,20 +1513,15 @@ with tab_studio:
         <div class="cp-hero">
             <div class="cp-hero-chip">#1 AI Video Editor & Clipping Tool</div>
             <h1 class="cp-hero-title">
-                <div class="cp-title-top">Turn any footage into</div>
+                <div class="cp-title-top">Turn any Video into</div>
                 <div class="cp-title-bottom">
-                    <span class="cp-morph-pill">
-                        <span class="cp-pill-aurora"></span>
-                        <span class="cp-pill-sheen"></span>
-                        <span class="cp-rotator-frame">
-                            <span class="cp-rotator-track">
-                                <span class="cp-rotator-word">brand presence</span>
-                                <span class="cp-rotator-word">a week of posts</span>
-                                <span class="cp-rotator-word">scroll-stopping Reels</span>
-                                <span class="cp-rotator-word">viral shorts</span>
-                                <span class="cp-rotator-word">a polished interview</span>
-                                <span class="cp-rotator-word">brand presence</span>
-                            </span>
+                    <span class="cp-modern-badge">
+                        <span class="cp-badge-aurora"></span>
+                        <span class="cp-words-grid">
+                            <span class="cp-word w1">viral shorts</span>
+                            <span class="cp-word w2">brand presence</span>
+                            <span class="cp-word w3">ready-to-post clips</span>
+                            <span class="cp-word w4">10x reach</span>
                         </span>
                     </span>
                     <span class="cp-faster-text">10x faster</span>
