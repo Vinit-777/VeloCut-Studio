@@ -44,6 +44,12 @@ from video_studio import (
     check_nvenc_available,
     STYLE_PRESETS,
 )
+from marketing_ai import (
+    generate_viral_thumbnail,
+    extract_thumbnail_frame,
+    get_recommended_frame_timestamps,
+    generate_social_suite,
+)
 
 # =============================================================================
 # PAGE CONFIG & CLIPPULSE STUDIO v4 — LIQUID GLASS DESIGN SYSTEM
@@ -1961,6 +1967,151 @@ with tab_studio:
                         else:
                             st.info("⚡ Background rendering in progress. Click **Apply Sidebar Style & Re-Render** to compile.")
 
+                    # =========================================================
+                    # CREATOR TOOLKIT: THUMBNAIL STUDIO & AI CAPTIONS / HASHTAGS
+                    # =========================================================
+                    st.markdown("<div style='height: 0.5rem;'></div>", unsafe_allow_html=True)
+                    st.divider()
+
+                    tool_c1, tool_c2 = st.columns(2, gap="large")
+
+                    with tool_c1:
+                        with st.expander("🖼️ Auto Thumbnail Generator", expanded=False):
+                            st.caption("Generate high-CTR YouTube Shorts & Reels cover images with bold typography.")
+                            th_col_a, th_col_b = st.columns([1.2, 1.0])
+                            with th_col_a:
+                                th_style = st.selectbox(
+                                    "Visual Style Preset",
+                                    [
+                                        "Hormozi Impact (Yellow/Green Pop)",
+                                        "Neon Cyber (Cyan/Pink Glow)",
+                                        "Beast Mode (Comic Yellow/Red)",
+                                        "Clean Editorial (Luxury Glow)",
+                                        "Cinematic Drama (High-Contrast Red)",
+                                    ],
+                                    key=f"th_style_{rank}",
+                                )
+                                th_headline = st.text_input("Hook Headline Text", value=clip["hook_title"][:45], key=f"th_head_{rank}")
+                            with th_col_b:
+                                th_ratio = st.radio(
+                                    "Aspect Ratio",
+                                    ["9:16 Vertical", "16:9 Landscape"],
+                                    horizontal=True,
+                                    key=f"th_ratio_{rank}",
+                                )
+                                th_badge = st.text_input("Badge / Sticker", value="MUST WATCH 🔥", key=f"th_badge_{rank}")
+
+                            clip_dur = max(2.0, float(clip["end"] - clip["start"]))
+                            ts_options = get_recommended_frame_timestamps(clip_dur)
+                            ts_labels = [opt[0] for opt in ts_options]
+                            chosen_ts_label = st.selectbox("Keyframe Frame", ts_labels, index=min(1, len(ts_labels)-1), key=f"th_ts_sel_{rank}")
+                            chosen_ts = next(opt[1] for opt in ts_options if opt[0] == chosen_ts_label)
+
+                            gen_th_btn = st.button("✨ Render Thumbnail", key=f"btn_gen_th_{rank}", use_container_width=True, type="primary")
+
+                            th_state_key = f"thumb_{st.session_state.run_id}_{rank}"
+                            video_source_for_thumb = (rendered["output_path"] if rendered and Path(rendered["output_path"]).exists() else active_source)
+
+                            if gen_th_btn or (th_state_key not in st.session_state):
+                                style_key_map = {
+                                    "Hormozi Impact (Yellow/Green Pop)": "hormozi",
+                                    "Neon Cyber (Cyan/Pink Glow)": "neon",
+                                    "Beast Mode (Comic Yellow/Red)": "beast",
+                                    "Clean Editorial (Luxury Glow)": "luxury",
+                                    "Cinematic Drama (High-Contrast Red)": "drama",
+                                }
+                                ratio_key = "9:16" if "9:16" in th_ratio else "16:9"
+
+                                frame_img = None
+                                if video_source_for_thumb and not str(video_source_for_thumb).startswith(("http://", "https://")):
+                                    frame_img = extract_thumbnail_frame(video_source_for_thumb, chosen_ts)
+                                elif rendered and Path(rendered["output_path"]).exists():
+                                    frame_img = extract_thumbnail_frame(rendered["output_path"], chosen_ts)
+
+                                if frame_img is not None:
+                                    th_result = generate_viral_thumbnail(
+                                        base_image=frame_img,
+                                        headline=th_headline,
+                                        style_preset=style_key_map.get(th_style, "hormozi"),
+                                        aspect_ratio=ratio_key,
+                                        badge_label=th_badge,
+                                        position="bottom",
+                                    )
+                                    import io
+                                    buf = io.BytesIO()
+                                    th_result.save(buf, format="JPEG", quality=95)
+                                    st.session_state[th_state_key] = buf.getvalue()
+
+                            if th_state_key in st.session_state and st.session_state[th_state_key]:
+                                th_bytes = st.session_state[th_state_key]
+                                st.image(th_bytes, caption=f"Cover Preview ({th_ratio})", use_container_width=True)
+                                slug = clip['hook_title'][:20].replace(' ', '_')
+                                st.download_button(
+                                    label="📥 Download Thumbnail (JPG)",
+                                    data=th_bytes,
+                                    file_name=f"ClipPulse_Thumbnail_r{rank}_{slug}.jpg",
+                                    mime="image/jpeg",
+                                    use_container_width=True,
+                                    key=f"dl_th_{rank}",
+                                )
+                            else:
+                                st.info("Click **✨ Render Thumbnail** to preview cover image.")
+
+                    with tool_c2:
+                        with st.expander("🏷️ AI Caption & Viral Hashtag Generator", expanded=False):
+                            cap_state_key = f"caps_{st.session_state.run_id}_{rank}"
+                            
+                            regen_caps = st.button("🔄 Generate / Refresh Social Copy", key=f"btn_regen_caps_{rank}", use_container_width=True, type="secondary")
+                            
+                            if regen_caps or (cap_state_key not in st.session_state):
+                                with st.spinner("Writing optimized copy for YouTube, IG, TikTok & LinkedIn..."):
+                                    clip_transcript = " ".join(str(w.get("word", "")).strip() for w in words)
+                                    video_title_val = (st.session_state.analysis.get("title", "") if st.session_state.analysis else "") or clip["hook_title"]
+                                    caps_data = generate_social_suite(
+                                        transcript_text=clip_transcript,
+                                        hook_title=clip["hook_title"],
+                                        video_title=video_title_val,
+                                    )
+                                    st.session_state[cap_state_key] = caps_data
+                            
+                            if cap_state_key in st.session_state:
+                                cdata = st.session_state[cap_state_key]
+                                src_engine = cdata.get("source", "ClipPulse Engine")
+                                st.markdown(f"<div style='font-size:0.75rem; color:#10B981; margin-bottom:0.4rem;'>● {src_engine}</div>", unsafe_allow_html=True)
+                                
+                                tab_yt, tab_ig, tab_tt, tab_li = st.tabs([
+                                    "YouTube Shorts",
+                                    "Instagram Reels",
+                                    "TikTok",
+                                    "LinkedIn",
+                                ])
+                                
+                                with tab_yt:
+                                    yt = cdata.get("youtube", {})
+                                    st.caption("Clickable Video Title:")
+                                    st.code(yt.get("title", ""), language=None)
+                                    st.caption("Description & Algorithmic Tags:")
+                                    st.text_area("YouTube Description", yt.get("description", ""), height=130, key=f"yt_desc_{rank}", label_visibility="collapsed")
+                                    st.caption("Search Tags:")
+                                    st.code(yt.get("tags", ""), language=None)
+
+                                with tab_ig:
+                                    ig = cdata.get("instagram", {})
+                                    st.caption("Scroll-Stopping Hook:")
+                                    st.code(ig.get("hook", ""), language=None)
+                                    st.caption("Full Reel Caption (Ready to Paste):")
+                                    st.text_area("Instagram Caption", ig.get("caption", ""), height=150, key=f"ig_cap_{rank}", label_visibility="collapsed")
+
+                                with tab_tt:
+                                    tt = cdata.get("tiktok", {})
+                                    st.caption("Punchy TikTok Caption & Tags:")
+                                    st.text_area("TikTok Caption", tt.get("caption", ""), height=110, key=f"tt_cap_{rank}", label_visibility="collapsed")
+
+                                with tab_li:
+                                    li = cdata.get("linkedin", {})
+                                    st.caption("Thought-Leadership Post:")
+                                    st.text_area("LinkedIn Post", li.get("post", ""), height=150, key=f"li_post_{rank}", label_visibility="collapsed")
+
             if shown_count < len(clips):
                 next_clip = clips[shown_count]
                 next_key = pool.make_key(st.session_state.run_id, active_source, next_clip, render_cfg)
@@ -2124,6 +2275,16 @@ with tab_features:
                 <div class="cp-feat-title">Hinglish / English Captions <span class="cp-badge-active">ACTIVE</span></div>
                 <div class="cp-feat-desc">Zero-tofu Indian Hinglish transliteration and English auto-translation for seamless Indian & global social reach.</div>
             </div>
+            <div class="cp-feat-card">
+                <div class="cp-feat-icon">🖼️</div>
+                <div class="cp-feat-title">Auto Thumbnail Generator <span class="cp-badge-active">ACTIVE</span></div>
+                <div class="cp-feat-desc">One-click 9:16 vertical & 16:9 landscape cover image extraction from peak moments with Hormozi, Neon Cyber, and Beast typography presets.</div>
+            </div>
+            <div class="cp-feat-card">
+                <div class="cp-feat-icon">🏷️</div>
+                <div class="cp-feat-title">AI Captions & Viral Hashtags <span class="cp-badge-active">ACTIVE</span></div>
+                <div class="cp-feat-desc">Instant multi-platform copy generation for YouTube Shorts, Instagram Reels, TikTok, and LinkedIn with algorithmic hashtag clustering.</div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -2137,11 +2298,6 @@ with tab_features:
                 <div class="cp-feat-icon">🎭</div>
                 <div class="cp-feat-title">AI B-Roll Insertion <span class="cp-badge-roadmap">ROADMAP</span></div>
                 <div class="cp-feat-desc">Contextual visual B-roll generated via text-to-video models to cover speech pauses and enhance retention.</div>
-            </div>
-            <div class="cp-feat-card" style="opacity:0.85;">
-                <div class="cp-feat-icon">🖼️</div>
-                <div class="cp-feat-title">Auto Thumbnail Generator <span class="cp-badge-roadmap">ROADMAP</span></div>
-                <div class="cp-feat-desc">One-click YouTube Shorts / TikTok cover image extraction with overlaid high-CTR hook typography.</div>
             </div>
             <div class="cp-feat-card" style="opacity:0.85;">
                 <div class="cp-feat-icon">📅</div>
