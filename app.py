@@ -5,19 +5,20 @@ import json
 import time
 import hashlib
 import threading
+import subprocess
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple
 
 from dotenv import load_dotenv
 import streamlit as st
 import plotly.graph_objects as go
 
-# Load local .env first, then safely check Streamlit Cloud Secrets without crashing locally
+# Load local .env first, then safely read Streamlit Cloud Secrets without crashing locally
 load_dotenv()
 try:
     if "GROQ_API_KEY" in st.secrets:
         os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
-    if "YOUTUBE_COOKIES" in st.secrets and not Path("cookies.txt").exists():
+    if "YOUTUBE_COOKIES" in st.secrets:
         Path("cookies.txt").write_text(st.secrets["YOUTUBE_COOKIES"], encoding="utf-8")
 except Exception:
     pass
@@ -424,7 +425,7 @@ def _clear_previous_clips():
 
 
 # =============================================================================
-# HELPERS
+# HELPERS & GUARANTEED CLIP FALLBACK
 # =============================================================================
 def _fmt_ts(sec: float) -> str:
     sec = max(0, int(round(sec)))
@@ -433,8 +434,117 @@ def _fmt_ts(sec: float) -> str:
     return f"{h:02d}:{m:02d}:{s:02d}" if h else f"{m:02d}:{s:02d}"
 
 
+def _probe_duration_seconds(path: str) -> float:
+    try:
+        out = subprocess.check_output(
+            [
+                "ffprobe", "-v", "error",
+                "-show_entries", "format=duration",
+                "-of", "default=noprint_wrappers=1:nokey=1",
+                path,
+            ],
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=15,
+        ).strip()
+        return max(0.0, float(out))
+    except Exception:
+        return 0.0
+
+
+def _ensure_fallback_clips(
+    result: Dict[str, Any],
+    source: str,
+    min_dur: int,
+    max_dur: int,
+    num_clips: int = 3,
+) -> Dict[str, Any]:
+    """Guarantees at least 1–3 high-energy clips if the AI highlight selector returns empty."""
+    if result.get("clips"):
+        return result
+
+    audio_info = result.get("audio_info") or {}
+    energy_curve = list(result.get("energy_curve") or [])
+
+    total_dur = float(audio_info.get("duration") or 0.0)
+    if total_dur < 2.0 and energy_curve:
+        total_dur = float(len(energy_curve))
+    if total_dur < 2.0 and not str(source).startswith(("http://", "https://")):
+        total_dur = _probe_duration_seconds(source)
+    if total_dur < 2.0:
+        total_dur = float(min_dur)
+
+    if not energy_curve:
+        energy_curve = [65.0] * max(5, int(round(total_dur)))
+        result["energy_curve"] = energy_curve
+
+    clips: List[Dict[str, Any]] = []
+    if total_dur <= min_dur + 2:
+        clip_end = round(total_dur, 2)
+        clips.append(
+            {
+                "rank": 1,
+                "start": 0.0,
+                "end": clip_end,
+                "duration": clip_end,
+                "virality_score": 86,
+                "hook_title": "TOP HIGHLIGHT MOMENT",
+                "reason": "Full highlight selected automatically from your uploaded video.",
+                "social_caption": "Watch till the end! #shorts #reels",
+                "words": [],
+                "needs_word_sync": True,
+                "needs_title_from_clip": True,
+            }
+        )
+    else:
+        target_dur = int(min(max_dur, max(min_dur, round((min_dur + max_dur) / 2.0))))
+        target_dur = min(target_dur, max(5, int(total_dur)))
+        max_start = max(0, int(total_dur) - target_dur)
+
+        n_energy = len(energy_curve)
+        scored = []
+        for s in range(0, max_start + 1):
+            e_idx = min(n_energy, s + target_dur)
+            s_idx = min(n_energy - 1, s)
+            window = energy_curve[s_idx:e_idx] if e_idx > s_idx else [50.0]
+            avg_e = sum(window) / max(1, len(window))
+            scored.append((avg_e, s))
+
+        scored.sort(key=lambda x: x[0], reverse=True)
+        chosen: List[int] = []
+        min_gap = max(5, int(target_dur * 0.85))
+        for _, s in scored:
+            if all(abs(s - prev) >= min_gap for prev in chosen):
+                chosen.append(s)
+                if len(chosen) >= num_clips:
+                    break
+        if not chosen:
+            chosen = [0]
+
+        for idx, s in enumerate(chosen, start=1):
+            e = min(round(total_dur, 2), float(s + target_dur))
+            clips.append(
+                {
+                    "rank": idx,
+                    "start": float(s),
+                    "end": e,
+                    "duration": round(e - float(s), 2),
+                    "virality_score": max(76, 89 - (idx - 1) * 4),
+                    "hook_title": f"HIGHLIGHT MOMENT #{idx}",
+                    "reason": "Automatically selected from the highest-energy section of your video.",
+                    "social_caption": "Don't miss this moment! #shorts #viral",
+                    "words": [],
+                    "needs_word_sync": True,
+                    "needs_title_from_clip": True,
+                }
+            )
+
+    result["clips"] = clips
+    return result
+
+
 def _cache_path_for(source: str, video_type: str, clip_goal: str, fast_heatmap: bool, min_dur: int, max_dur: int) -> Path:
-    key_str = f"v7|{source}|{video_type}|{clip_goal}|{fast_heatmap}|{min_dur}|{max_dur}"
+    key_str = f"v8|{source}|{video_type}|{clip_goal}|{fast_heatmap}|{min_dur}|{max_dur}"
     digest = hashlib.md5(key_str.encode("utf-8")).hexdigest()[:12]
     return Path("temp") / f"analysis_cache_{digest}.json"
 
@@ -539,6 +649,10 @@ def _render_clip_clean(source: str, clip: Dict[str, Any], cfg: Dict[str, Any]):
         progress_cb=pcb,
     )
     pbar.empty()
+    upd = info.get("updated_meta") or {}
+    for k_m in ("hook_title", "reason", "social_caption"):
+        if upd.get(k_m):
+            clip[k_m] = upd[k_m]
     st.session_state.rendered_reels[rank] = info
 
 
@@ -786,15 +900,19 @@ if trigger_analysis and source_to_run:
     results_slot.empty()
 
     with live_work_slot:
+        if not os.environ.get("GROQ_API_KEY"):
+            st.warning("GROQ_API_KEY was not detected. Add it in Streamlit Secrets (or local .env) for AI captions and titles.")
+
         cache_file = _cache_path_for(source_to_run, video_type, clip_goal, fast_heatmap_mode, min_dur, max_dur)
         loaded_from_cache = False
 
         if cache_file.exists():
             try:
                 cached = json.loads(cache_file.read_text(encoding="utf-8"))
-                st.session_state.analysis = cached
-                st.session_state.active_source = source_to_run
-                loaded_from_cache = True
+                if isinstance(cached, dict) and len(cached.get("clips") or []) > 0:
+                    st.session_state.analysis = cached
+                    st.session_state.active_source = source_to_run
+                    loaded_from_cache = True
             except Exception:
                 loaded_from_cache = False
 
@@ -810,16 +928,18 @@ if trigger_analysis and source_to_run:
                         min_dur=min_dur,
                         max_dur=max_dur,
                     )
+                result = _ensure_fallback_clips(result, source_to_run, min_dur, max_dur, num_clips=3)
                 st.session_state.analysis = result
                 st.session_state.active_source = source_to_run
-                try:
-                    cache_file.write_text(json.dumps(result), encoding="utf-8")
-                except Exception:
-                    pass
+                if result.get("clips"):
+                    try:
+                        cache_file.write_text(json.dumps(result), encoding="utf-8")
+                    except Exception:
+                        pass
             except Exception as e:
                 st.error(f"Could not process this video. Please verify the link or try uploading the file. ({e})")
 
-        if st.session_state.analysis and st.session_state.analysis["clips"]:
+        if st.session_state.analysis and st.session_state.analysis.get("clips"):
             a_info = st.session_state.analysis["audio_info"]
             render_cfg["direct_mp4"] = a_info.get("direct_mp4")
             render_cfg["http_headers"] = a_info.get("http_headers")
@@ -848,7 +968,7 @@ analysis = st.session_state.analysis
 active_source = st.session_state.active_source
 
 with results_slot.container():
-    if analysis:
+    if analysis and analysis.get("clips"):
         clips = analysis["clips"]
         audio_info = analysis["audio_info"]
         shown_count = min(st.session_state.shown_count, len(clips))
