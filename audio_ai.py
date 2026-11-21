@@ -533,25 +533,45 @@ def extract_compressed_audio(
     max_scan_seconds: Optional[float] = None,
     job_id: Optional[str] = None,
 ) -> Dict[str, Any]:
+    import glob as _glob
     Path(temp_dir).mkdir(parents=True, exist_ok=True)
     job_id = job_id or uuid.uuid4().hex[:8]
     mp3_path = str(Path(temp_dir) / f"{job_id}_16k.mp3")
 
     if _is_url(source):
         cap_s = int(max_scan_seconds or 180)
-        raw_path = str(Path(temp_dir) / f"{job_id}_raw.m4a")
-        cmd = [
+        raw_tmpl = str(Path(temp_dir) / f"{job_id}_raw.%(ext)s")
+
+        cmd1 = [
             *ytdlp_base_cmd(),
             "--download-sections", f"*0-{cap_s}",
-            "-f", "bestaudio[ext=m4a]/bestaudio/best",
+            "-f", "bestaudio/best",
             "--no-playlist", "--quiet", "--no-warnings",
-            "-o", raw_path,
+            "-o", raw_tmpl,
             source,
         ]
-        res = subprocess.run(cmd, capture_output=True, text=True)
-        if res.returncode != 0 or not Path(raw_path).exists():
+        res = subprocess.run(cmd1, capture_output=True, text=True)
+        matches = [m for m in _glob.glob(str(Path(temp_dir) / f"{job_id}_raw.*")) if Path(m).stat().st_size > 2000]
+
+        if res.returncode != 0 or not matches:
+            for old_f in _glob.glob(str(Path(temp_dir) / f"{job_id}_raw.*")):
+                try:
+                    Path(old_f).unlink()
+                except OSError:
+                    pass
+            cmd2 = [
+                *ytdlp_base_cmd(),
+                "-f", "worstaudio[ext=m4a]/bestaudio[abr<=64]/bestaudio/best",
+                "--no-playlist", "--quiet", "--no-warnings",
+                "-o", raw_tmpl,
+                source,
+            ]
+            res = subprocess.run(cmd2, capture_output=True, text=True)
+            matches = [m for m in _glob.glob(str(Path(temp_dir) / f"{job_id}_raw.*")) if Path(m).stat().st_size > 2000]
+
+        if not matches:
             raise RuntimeError(f"yt-dlp audio fetch failed: {res.stderr.strip()}")
-        input_media = raw_path
+        input_media = matches[0]
         source_type = "youtube_window"
     else:
         if not Path(source).exists():
@@ -560,7 +580,7 @@ def extract_compressed_audio(
         source_type = "local"
 
     ff_cmd = ["ffmpeg", "-y", "-v", "error", "-i", input_media]
-    if max_scan_seconds and source_type == "local":
+    if max_scan_seconds:
         ff_cmd += ["-t", f"{max_scan_seconds:.1f}"]
     ff_cmd += ["-vn", "-ac", "1", "-ar", "16000", "-b:a", "32k", mp3_path]
     subprocess.run(ff_cmd, check=True)
@@ -582,6 +602,7 @@ def extract_compressed_audio(
         "size_mb": round(size_mb, 2),
         "duration": round(duration, 2),
     }
+
 
 
 def compute_audio_energy(mp3_path: str) -> List[float]:

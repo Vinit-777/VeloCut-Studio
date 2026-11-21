@@ -1406,11 +1406,7 @@ def extract_video_segment(
     http_headers: Optional[Dict[str, str]] = None,
     fast_stream_mode: bool = False,
 ) -> str:
-    """
-    Fast HD Clip Extractor (720p/1080p — never blurry 360p format 18!):
-    Uses direct HTTP byte-range input-seek (-ss BEFORE -i) so pulling a 35s clip
-    from a 3-hour ended livestream takes ~4-7 seconds!
-    """
+    import glob as _glob
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     duration = max(1.0, end - start)
 
@@ -1433,18 +1429,17 @@ def extract_video_segment(
                     "-avoid_negative_ts", "make_zero",
                     out_path,
                 ]
-                res = subprocess.run(ff_fast, capture_output=True, timeout=22)
+                res = subprocess.run(ff_fast, capture_output=True, timeout=24)
                 if res.returncode == 0 and Path(out_path).exists() and Path(out_path).stat().st_size > 25000:
                     return out_path
             except Exception:
                 pass
 
-        # Fallback: yt-dlp --download-sections (720p HD on fast stream mode, up to 1080p otherwise)
         raw_dl = str(Path(out_path).with_name(Path(out_path).stem + "_dl.mp4"))
         fmt_sel = (
-            "bestvideo[height<=720][height>=480][vcodec^=avc]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]"
+            "bestvideo[height<=720][vcodec^=avc]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best"
             if fast_stream_mode
-            else "bestvideo[height<=1080][height>=720][vcodec^=avc]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]"
+            else "bestvideo[height<=1080][height>=720][vcodec^=avc]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best"
         )
         cmd = [
             *ytdlp_base_cmd(),
@@ -1457,13 +1452,49 @@ def extract_video_segment(
             source,
         ]
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=85)
-        if res.returncode != 0 or not Path(raw_dl).exists():
-            raise RuntimeError(f"YouTube HD clip download failed: {res.stderr.strip()}")
+        if res.returncode == 0 and Path(raw_dl).exists() and Path(raw_dl).stat().st_size > 20000:
+            subprocess.run(
+                [
+                    "ffmpeg", "-y", "-v", "error",
+                    "-i", raw_dl,
+                    "-c:v", "libx264", "-preset", "superfast", "-crf", "15", "-pix_fmt", "yuv420p",
+                    "-c:a", "aac", "-b:a", "192k",
+                    "-avoid_negative_ts", "make_zero",
+                    out_path,
+                ],
+                check=True,
+            )
+            try:
+                Path(raw_dl).unlink()
+            except OSError:
+                pass
+            return out_path
 
+        full_tmpl = str(Path(out_path).with_name(Path(out_path).stem + "_full.%(ext)s"))
+        cmd3 = [
+            *ytdlp_base_cmd(),
+            "-f", "bestvideo[height<=720]+bestaudio/best[height<=720]/best",
+            "--max-filesize", "180M",
+            "--merge-output-format", "mp4",
+            "--no-playlist", "--quiet", "--no-warnings",
+            "-o", full_tmpl,
+            source,
+        ]
+        res3 = subprocess.run(cmd3, capture_output=True, text=True, timeout=110)
+        full_matches = [
+            m for m in _glob.glob(str(Path(out_path).with_name(Path(out_path).stem + "_full.*")))
+            if Path(m).stat().st_size > 25000
+        ]
+        if not full_matches:
+            raise RuntimeError(f"YouTube HD clip download failed: {(res3.stderr or res.stderr).strip()}")
+
+        full_file = full_matches[0]
         subprocess.run(
             [
                 "ffmpeg", "-y", "-v", "error",
-                "-i", raw_dl,
+                "-ss", f"{start:.3f}",
+                "-i", full_file,
+                "-t", f"{duration:.3f}",
                 "-c:v", "libx264", "-preset", "superfast", "-crf", "15", "-pix_fmt", "yuv420p",
                 "-c:a", "aac", "-b:a", "192k",
                 "-avoid_negative_ts", "make_zero",
@@ -1471,10 +1502,11 @@ def extract_video_segment(
             ],
             check=True,
         )
-        try:
-            Path(raw_dl).unlink()
-        except OSError:
-            pass
+        for f in full_matches:
+            try:
+                Path(f).unlink()
+            except OSError:
+                pass
         return out_path
 
     cmd = [
@@ -1489,6 +1521,7 @@ def extract_video_segment(
     ]
     subprocess.run(cmd, check=True)
     return out_path
+
 
 
 # =============================================================================

@@ -8,16 +8,20 @@ import threading
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 
+from dotenv import load_dotenv
 import streamlit as st
 import plotly.graph_objects as go
 
-import streamlit as st
+# Load local .env first, then safely check Streamlit Cloud Secrets without crashing locally
+load_dotenv()
+try:
+    if "GROQ_API_KEY" in st.secrets:
+        os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+    if "YOUTUBE_COOKIES" in st.secrets and not Path("cookies.txt").exists():
+        Path("cookies.txt").write_text(st.secrets["YOUTUBE_COOKIES"], encoding="utf-8")
+except Exception:
+    pass
 
-# Load API key & optional YouTube cookies from Streamlit Cloud Secrets
-if "GROQ_API_KEY" in st.secrets:
-    os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
-if "YOUTUBE_COOKIES" in st.secrets and not Path("cookies.txt").exists():
-    Path("cookies.txt").write_text(st.secrets["YOUTUBE_COOKIES"], encoding="utf-8")
 from audio_ai import analyze_video
 from video_studio import (
     render_viral_reel,
@@ -45,7 +49,6 @@ st.markdown(
         color: #F1F5F9;
     }
 
-    /* Hide Streamlit's noisy top-right Deploy bar & footer while keeping sidebar toggle */
     #MainMenu, footer, [data-testid="stDeployButton"], .stDeployButton {
         visibility: hidden !important;
         display: none !important;
@@ -60,7 +63,6 @@ st.markdown(
         max-width: 1160px !important;
     }
 
-    /* Sidebar — Deep Classic Navy */
     section[data-testid="stSidebar"] {
         background-color: #0D131F !important;
         border-right: 1px solid #1E293B !important;
@@ -87,7 +89,6 @@ st.markdown(
         margin-bottom: 0.4rem;
     }
 
-    /* Classic Top Navigation Bar */
     .vc-navbar {
         display: flex;
         align-items: center;
@@ -141,7 +142,6 @@ st.markdown(
         border-radius: 999px;
     }
 
-    /* Clean Hero Header */
     .vc-hero {
         margin-bottom: 1.5rem;
     }
@@ -159,7 +159,6 @@ st.markdown(
         margin: 0;
     }
 
-    /* Section Labels */
     .vc-label {
         font-size: 0.76rem;
         font-weight: 600;
@@ -169,7 +168,6 @@ st.markdown(
         margin: 0.25rem 0 0.75rem 0;
     }
 
-    /* Subtle Classic ETA Strip */
     .vc-eta {
         display: flex;
         align-items: center;
@@ -194,7 +192,6 @@ st.markdown(
         font-size: 0.82rem;
     }
 
-    /* Classic Buttons: Crisp White Primary + Deep Navy Secondary */
     div.stButton > button[kind="primary"] {
         background-color: #FFFFFF !important;
         color: #090C10 !important;
@@ -225,7 +222,6 @@ st.markdown(
         color: #FFFFFF !important;
     }
 
-    /* Clean Tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 1.5rem;
         border-bottom: 1px solid #1E293B;
@@ -243,7 +239,6 @@ st.markdown(
         background-color: #FFFFFF !important;
     }
 
-    /* Inputs & Selectboxes — Matte Black & Slate Border */
     .stTextInput input, .stSelectbox [data-baseweb="select"] > div {
         background-color: #0A0E16 !important;
         border: 1px solid #243044 !important;
@@ -255,7 +250,6 @@ st.markdown(
         box-shadow: none !important;
     }
 
-    /* Result Cards & Badges */
     [data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #0D131F !important;
         border: 1px solid #1E293B !important;
@@ -316,7 +310,7 @@ Path("assets").mkdir(exist_ok=True)
 
 
 # =============================================================================
-# SILENT BACKGROUND PRE-RENDERER (KEEPS NEXT CLIP READY WITH ZERO WAIT)
+# SILENT BACKGROUND PRE-RENDERER
 # =============================================================================
 class BackgroundPreRenderer:
     def __init__(self):
@@ -422,7 +416,6 @@ if "run_id" not in st.session_state:
 
 
 def _clear_previous_clips():
-    """Clears displayed clips immediately when a new link or search is started."""
     st.session_state.analysis = None
     st.session_state.active_source = None
     st.session_state.rendered_reels = {}
@@ -464,7 +457,6 @@ def _estimate_wait_range(
 
 
 def _clean_progress_text(frac: float, raw_label: str) -> str:
-    """Translates internal progress messages into clean, user-friendly status copy."""
     if frac < 0.22:
         return "Fetching video segment..."
     if frac < 0.35:
@@ -559,7 +551,7 @@ def _kickoff_next_background_clip(run_id: str, source: str, clips, shown_count: 
 
 
 # =============================================================================
-# SIDEBAR — CLEAN STUDIO CONTROLS (CLASSIC NAVY & SLATE)
+# SIDEBAR — CLEAN STUDIO CONTROLS
 # =============================================================================
 nvenc_ok = check_nvenc_available()
 
@@ -609,7 +601,7 @@ with st.sidebar:
 
 
 # =============================================================================
-# CLASSIC TOP NAVIGATION BAR + CUSTOM VECTOR LOGO
+# TOP NAVIGATION BAR & HERO
 # =============================================================================
 st.markdown(
     """
@@ -646,7 +638,7 @@ st.markdown(
 
 
 # =============================================================================
-# STEP 1: CLEAN CONFIGURATION BAR
+# PREFERENCES
 # =============================================================================
 st.markdown('<div class="vc-label">Preferences</div>', unsafe_allow_html=True)
 q1, q2, q3 = st.columns(3)
@@ -687,7 +679,6 @@ fast_heatmap_mode = st.toggle(
     value=(video_type == "gaming"),
 )
 
-# Subtle framing override inside sidebar
 with st.sidebar:
     st.markdown('<div class="side-section">Frame Layout</div>', unsafe_allow_html=True)
     framing_override_map = {
@@ -719,7 +710,6 @@ render_cfg = {
     "bg_music_path": bg_music_path,
 }
 
-# Clean, Non-Technical Estimated Time Strip
 eta_low, eta_high = _estimate_wait_range(
     framing_mode, transition_style, fast_heatmap_mode, min_dur, max_dur, nvenc_ok
 )
@@ -735,7 +725,7 @@ st.markdown(
 
 
 # =============================================================================
-# STEP 2: SOURCE INPUT (AUTO-CLEARS PREVIOUS CLIPS ON NEW LINK OR RE-SEARCH)
+# SOURCE INPUT
 # =============================================================================
 tab_yt, tab_local = st.tabs(["YouTube / Stream URL", "Local Video File"])
 
@@ -789,7 +779,7 @@ results_slot = st.empty()
 
 
 # =============================================================================
-# GENERATION PIPELINE (CLEAN USER-FACING PROGRESS ONLY)
+# GENERATION PIPELINE
 # =============================================================================
 if trigger_analysis and source_to_run:
     _clear_previous_clips()
@@ -840,7 +830,6 @@ if trigger_analysis and source_to_run:
                     st.session_state.analysis["clips"][0],
                     render_cfg,
                 )
-                # Silently prepare Clip #2 in the background
                 _kickoff_next_background_clip(
                     st.session_state.run_id,
                     st.session_state.active_source,
@@ -853,7 +842,7 @@ if trigger_analysis and source_to_run:
 
 
 # =============================================================================
-# CLEAN RESULTS WORKSPACE
+# RESULTS WORKSPACE
 # =============================================================================
 analysis = st.session_state.analysis
 active_source = st.session_state.active_source
@@ -945,7 +934,6 @@ with results_slot.container():
                     else:
                         st.info("Click **Apply Sidebar Style & Re-Render** to generate this clip.")
 
-        # Clean "Want another clip?" Prompt
         if shown_count < len(clips):
             next_clip = clips[shown_count]
             next_key = pool.make_key(st.session_state.run_id, active_source, next_clip, render_cfg)
@@ -1020,7 +1008,6 @@ with results_slot.container():
                         except Exception as e:
                             st.error(f"Could not render clip: {e}")
 
-        # Optional collapsible Engagement Timeline (keeps UI clutter-free, 1 click to show in viva!)
         st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
         with st.expander("View Video Engagement Timeline"):
             st.plotly_chart(
