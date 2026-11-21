@@ -892,9 +892,9 @@ st.markdown('<div class="vc-label">Preferences</div>', unsafe_allow_html=True)
 q1, q2, q3 = st.columns(3)
 
 video_type_map = {
+    "Fit Whole Video (Aesthetic Blurred Canvas)": ("full_video", "blurred_fill"),
+    "Fit Whole Video (Studio Uncropped Frame)": ("full_video", "full_uncropped"),
     "Auto Vertical Face Tracking (Smart 9:16)": ("informational", "full_fill"),
-    "Aesthetic Blurred Canvas (No Cropping)": ("full_video", "blurred_fill"),
-    "Full Video (Studio Uncropped Frame)": ("full_video", "full_uncropped"),
     "Gaming / Livestream (Screen + Facecam)": ("gaming", "streamer_split"),
     "Podcast / Two-Person Interview": ("podcast", "podcast_auto"),
 }
@@ -931,9 +931,9 @@ with st.sidebar:
     st.markdown('<div class="side-section">Frame Layout</div>', unsafe_allow_html=True)
     framing_override_map = {
         "Match Selected Format": default_framing,
-        "Auto Vertical Face Tracking (9:16 Crop)": "full_fill",
-        "Aesthetic Blurred Canvas (No Cropping)": "blurred_fill",
-        "Full Video (Studio Uncropped)": "full_uncropped",
+        "Fit Whole Video (Aesthetic Blurred Canvas)": "blurred_fill",
+        "Fit Whole Video (Studio Uncropped Frame)": "full_uncropped",
+        "Auto Vertical Face Tracking (Smart 9:16)": "full_fill",
         "Screen + Facecam Split": "streamer_split",
         "Podcast Top / Bottom Split": "podcast_auto",
     }

@@ -1039,46 +1039,53 @@ def _analyze_shots_and_framing(
                 shot_type = "broll"
 
             if shot_type == "two_shot":
-                t_idx = [x["frame"] for x in two_s]
-                lx = _fill_shot_track(f_s, f_e, t_idx, [x["two_faces"][0][0] for x in two_s], 0.25)
-                ly = _fill_shot_track(f_s, f_e, t_idx, [x["two_faces"][0][1] for x in two_s], 0.36)
-                lfw = _fill_shot_track(f_s, f_e, t_idx, [x["two_faces"][0][2] for x in two_s], 0.14)
+                # When multiple people/speakers are present, keep the WHOLE video visible
+                # so nobody and no reaction or game screen is cut in half!
+                if framing_mode != "dual_split":
+                    for f in range(f_s, f_e):
+                        single_bounds[f] = "full"
+                        frame_modes[f] = "broll_blur"
+                else:
+                    t_idx = [x["frame"] for x in two_s]
+                    lx = _fill_shot_track(f_s, f_e, t_idx, [x["two_faces"][0][0] for x in two_s], 0.25)
+                    ly = _fill_shot_track(f_s, f_e, t_idx, [x["two_faces"][0][1] for x in two_s], 0.36)
+                    lfw = _fill_shot_track(f_s, f_e, t_idx, [x["two_faces"][0][2] for x in two_s], 0.14)
 
-                rx = _fill_shot_track(f_s, f_e, t_idx, [x["two_faces"][1][0] for x in two_s], 0.75)
-                ry = _fill_shot_track(f_s, f_e, t_idx, [x["two_faces"][1][1] for x in two_s], 0.36)
-                rfw = _fill_shot_track(f_s, f_e, t_idx, [x["two_faces"][1][2] for x in two_s], 0.14)
+                    rx = _fill_shot_track(f_s, f_e, t_idx, [x["two_faces"][1][0] for x in two_s], 0.75)
+                    ry = _fill_shot_track(f_s, f_e, t_idx, [x["two_faces"][1][1] for x in two_s], 0.36)
+                    rfw = _fill_shot_track(f_s, f_e, t_idx, [x["two_faces"][1][2] for x in two_s], 0.14)
 
-                left_x[f_s:f_e], left_y[f_s:f_e], left_fw[f_s:f_e] = lx, ly, lfw
-                right_x[f_s:f_e], right_y[f_s:f_e], right_fw[f_s:f_e] = rx, ry, rfw
+                    left_x[f_s:f_e], left_y[f_s:f_e], left_fw[f_s:f_e] = lx, ly, lfw
+                    right_x[f_s:f_e], right_y[f_s:f_e], right_fw[f_s:f_e] = rx, ry, rfw
 
-                med_l, med_r = float(np.median(lx)), float(np.median(rx))
-                split_mid_x[f_s:f_e] = 0.50 if (med_l < 0.46 and med_r > 0.54) else float((med_l + med_r) / 2.0)
+                    med_l, med_r = float(np.median(lx)), float(np.median(rx))
+                    split_mid_x[f_s:f_e] = 0.50 if (med_l < 0.46 and med_r > 0.54) else float((med_l + med_r) / 2.0)
 
-                l_energy, r_energy = 0.0, 0.0
-                for k in range(1, len(two_s)):
-                    if two_s[k]["l_patch"] is not None and two_s[k - 1]["l_patch"] is not None:
-                        l_energy += float(np.mean(np.abs(two_s[k]["l_patch"] - two_s[k - 1]["l_patch"])))
-                        r_energy += float(np.mean(np.abs(two_s[k]["r_patch"] - two_s[k - 1]["r_patch"])))
-                active_side = "left" if l_energy > r_energy * 1.10 else "right"
-
-                for f in range(f_s, f_e):
-                    if active_side == "left":
-                        single_x[f], single_y[f], single_fw[f] = left_x[f], left_y[f], left_fw[f]
-                        single_bounds[f] = "left"
-                    else:
-                        single_x[f], single_y[f], single_fw[f] = right_x[f], right_y[f], right_fw[f]
-                        single_bounds[f] = "right"
-                    frame_modes[f] = "dual" if (framing_mode == "dual_split" or intro_end_f <= f < outro_start_f) else "single"
+                    for f in range(f_s, f_e):
+                        single_bounds[f] = "full"
+                        frame_modes[f] = "dual"
 
             elif shot_type == "one_shot":
                 o_idx = [x["frame"] for x in any_s]
-                sx = _fill_shot_track(f_s, f_e, o_idx, [x["faces"][0][0] for x in any_s], 0.50)
-                sy = _fill_shot_track(f_s, f_e, o_idx, [x["faces"][0][1] for x in any_s], 0.38)
-                sfw = _fill_shot_track(f_s, f_e, o_idx, [x["faces"][0][2] for x in any_s], 0.16)
-                single_x[f_s:f_e], single_y[f_s:f_e], single_fw[f_s:f_e] = sx, sy, sfw
-                for f in range(f_s, f_e):
-                    single_bounds[f] = "full"
-                    frame_modes[f] = "single"
+                multi_face_counts = [len(x["faces"]) for x in any_s]
+                has_multi_faces = (max(multi_face_counts) >= 2) if multi_face_counts else False
+                all_shot_faces = [fc for x in any_s for fc in x["faces"]]
+                shot_span_w = (max(fc[0] for fc in all_shot_faces) - min(fc[0] for fc in all_shot_faces)) if all_shot_faces else 0.0
+
+                # If multiple people or wide scene in a landscape video (16:9),
+                # preserve the WHOLE VIDEO so nobody and no context is cut in half!
+                if (has_multi_faces or shot_span_w >= 0.28) and src_w > src_h * 1.15:
+                    for f in range(f_s, f_e):
+                        single_bounds[f] = "full"
+                        frame_modes[f] = "broll_blur"
+                else:
+                    sx = _fill_shot_track(f_s, f_e, o_idx, [x["faces"][0][0] for x in any_s], 0.50)
+                    sy = _fill_shot_track(f_s, f_e, o_idx, [x["faces"][0][1] for x in any_s], 0.38)
+                    sfw = _fill_shot_track(f_s, f_e, o_idx, [x["faces"][0][2] for x in any_s], 0.16)
+                    single_x[f_s:f_e], single_y[f_s:f_e], single_fw[f_s:f_e] = sx, sy, sfw
+                    for f in range(f_s, f_e):
+                        single_bounds[f] = "full"
+                        frame_modes[f] = "single"
 
             else:
                 b_idx = [x["frame"] for x in sh]
@@ -1431,22 +1438,6 @@ def _render_mode_frame(
 
     src_w = src_frame.shape[1]
     z = 1.0 + 0.045 * (0.5 - 0.5 * math.cos(t_sec * 0.85)) if dynamic_zoom else 1.0
-    bound = track["single_bounds"][m_idx]
-    mid_px = int(round(float(track["split_mid_x"][m_idx]) * src_w))
-    margin = max(14, int(round(src_w * 0.032)))
-
-    if bound == "left":
-        return _crop_portrait(
-            src_frame, float(track["single_x"][m_idx]), float(track["single_y"][m_idx]),
-            float(track["single_fw"][m_idx]), out_w, out_h,
-            zoom=z, x_min_px=0, x_max_px=max(96, mid_px - margin),
-        )
-    if bound == "right":
-        return _crop_portrait(
-            src_frame, float(track["single_x"][m_idx]), float(track["single_y"][m_idx]),
-            float(track["single_fw"][m_idx]), out_w, out_h,
-            zoom=z, x_min_px=min(src_w - 96, mid_px + margin), x_max_px=src_w,
-        )
     return _crop_portrait(
         src_frame, float(track["single_x"][m_idx]), float(track["single_y"][m_idx]),
         float(track["single_fw"][m_idx]), out_w, out_h, zoom=z,
