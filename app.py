@@ -246,44 +246,168 @@ st.markdown(
     /* ======== HERO ======== */
     .cp-hero {
         text-align: center;
-        margin: 1.2rem auto 2.0rem auto;
-        max-width: 860px;
+        margin: 1.2rem auto 2.2rem auto;
+        max-width: 980px;
     }
     .cp-hero-chip {
         display: inline-flex;
         align-items: center;
-        gap: 0.45rem;
-        background: rgba(99, 102, 241, 0.12);
-        border: 1px solid rgba(99, 102, 241, 0.3);
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.14);
         border-radius: 999px;
-        padding: 0.32rem 0.9rem;
-        font-size: 0.76rem;
+        padding: 0.38rem 1.15rem;
+        font-size: 0.78rem;
         font-weight: 700;
-        color: #A5B4FC;
-        letter-spacing: 0.05em;
+        color: #94A3B8;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
-        margin-bottom: 0.9rem;
+        margin-bottom: 1.2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
-    .cp-hero h1 {
+    .cp-hero-title {
         font-family: 'Plus Jakarta Sans', sans-serif;
-        font-size: 2.5rem;
+        font-size: clamp(2.1rem, 4.4vw, 3.4rem);
         font-weight: 800;
         letter-spacing: -0.035em;
         color: #FFFFFF;
-        line-height: 1.18;
-        margin: 0 0 0.75rem 0;
+        line-height: 1.22;
+        margin: 0;
+    }
+    .cp-title-top {
+        color: #FFFFFF;
+    }
+    .cp-title-bottom {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-top: 0.35rem;
+        vertical-align: middle;
+    }
+    .cp-morph-pill {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: clamp(3.2rem, 5.0vw, 4.2rem);
+        border-radius: 9999px;
+        overflow: hidden;
+        border: 1.5px solid rgba(255, 255, 255, 0.24);
+        box-shadow: 0 14px 44px rgba(0, 0, 0, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(28px) saturate(180%);
+        -webkit-backdrop-filter: blur(28px) saturate(180%);
+        background: rgba(16, 21, 33, 0.72);
+        box-sizing: border-box;
+        vertical-align: middle;
+        animation: cpPillWidthMorph 12.5s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+    }
+    .cp-pill-aurora {
+        position: absolute;
+        inset: -80%;
+        background: radial-gradient(circle at 25% 35%, rgba(244, 114, 182, 0.55) 0%, transparent 45%),
+                    radial-gradient(circle at 75% 65%, rgba(56, 189, 248, 0.5) 0%, transparent 45%),
+                    radial-gradient(circle at 45% 80%, rgba(168, 85, 247, 0.5) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 25%, rgba(251, 146, 60, 0.45) 0%, transparent 45%),
+                    rgba(255, 255, 255, 0.05);
+        filter: blur(22px);
+        animation: cpAuroraSwirl 10s ease-in-out infinite alternate;
+        pointer-events: none;
+    }
+    .cp-pill-sheen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 48%;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 100%);
+        border-radius: 9999px 9999px 0 0;
+        pointer-events: none;
+        z-index: 1;
+    }
+    @keyframes cpAuroraSwirl {
+        0% { transform: rotate(0deg) scale(1.0) translate(0px, 0px); }
+        50% { transform: rotate(180deg) scale(1.35) translate(-25px, 15px); }
+        100% { transform: rotate(360deg) scale(1.05) translate(15px, -15px); }
+    }
+    .cp-rotator-frame {
+        position: relative;
+        z-index: 2;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+    }
+    .cp-rotator-track {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        animation: cpRollWords 12.5s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+    }
+    .cp-rotator-word {
+        height: clamp(3.2rem, 5.0vw, 4.2rem);
+        min-height: clamp(3.2rem, 5.0vw, 4.2rem);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: clamp(2.0rem, 4.2vw, 3.2rem);
+        font-weight: 800;
+        color: #FFFFFF;
+        white-space: nowrap;
+        padding: 0 1.6rem;
+        text-shadow: 0 2px 16px rgba(0, 0, 0, 0.7);
+        letter-spacing: -0.025em;
+        box-sizing: border-box;
+    }
+    .cp-faster-text {
+        color: #FFFFFF;
+        white-space: nowrap;
+    }
+    @keyframes cpRollWords {
+        0%, 16% { transform: translateY(0); }
+        20%, 36% { transform: translateY(-100%); }
+        40%, 56% { transform: translateY(-200%); }
+        60%, 76% { transform: translateY(-300%); }
+        80%, 96% { transform: translateY(-400%); }
+        100% { transform: translateY(-500%); }
+    }
+    @keyframes cpPillWidthMorph {
+        0%, 16% { width: 15.2ch; }
+        20%, 36% { width: 16.0ch; }
+        40%, 56% { width: 22.8ch; }
+        60%, 76% { width: 13.0ch; }
+        80%, 96% { width: 21.6ch; }
+        100% { width: 15.2ch; }
     }
     .cp-gradient-text {
         background: linear-gradient(135deg, #FFFFFF 20%, #A5B4FC 60%, #C084FC 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
-    .cp-hero p {
-        font-size: 1.05rem;
+    .cp-hero p, .cp-hero-sub {
+        font-size: clamp(1.0rem, 1.8vw, 1.15rem);
         color: #94A3B8;
-        line-height: 1.55;
-        max-width: 720px;
-        margin: 0 auto;
+        line-height: 1.6;
+        max-width: 780px;
+        margin: 1.3rem auto 0 auto;
+    }
+    @media (max-width: 768px) {
+        .cp-hero-title {
+            font-size: 1.85rem !important;
+        }
+        .cp-rotator-word {
+            font-size: 1.6rem !important;
+            padding: 0 1.1rem;
+        }
+        .cp-morph-pill {
+            height: 2.9rem !important;
+        }
+        .cp-rotator-word {
+            height: 2.9rem !important;
+            min-height: 2.9rem !important;
+        }
     }
 
     /* ======== INPUT CARD ======== */
@@ -1387,9 +1511,30 @@ with tab_studio:
     st.markdown(
         """
         <div class="cp-hero">
-            <div class="cp-hero-chip">🔥 #1 AI Video Clipping Tool</div>
-            <h1>Turn long videos into<br><span class="cp-gradient-text">ready-to-post viral shorts.</span></h1>
-            <p>ClipPulse extracts the strongest storytelling moments, syncs kinetic animated captions, adds 3D emojis, and auto-reframes to 9:16 vertical with audience virality scores.</p>
+            <div class="cp-hero-chip">#1 AI Video Editor & Clipping Tool</div>
+            <h1 class="cp-hero-title">
+                <div class="cp-title-top">Turn any footage into</div>
+                <div class="cp-title-bottom">
+                    <span class="cp-morph-pill">
+                        <span class="cp-pill-aurora"></span>
+                        <span class="cp-pill-sheen"></span>
+                        <span class="cp-rotator-frame">
+                            <span class="cp-rotator-track">
+                                <span class="cp-rotator-word">brand presence</span>
+                                <span class="cp-rotator-word">a week of posts</span>
+                                <span class="cp-rotator-word">scroll-stopping Reels</span>
+                                <span class="cp-rotator-word">viral shorts</span>
+                                <span class="cp-rotator-word">a polished interview</span>
+                                <span class="cp-rotator-word">brand presence</span>
+                            </span>
+                        </span>
+                    </span>
+                    <span class="cp-faster-text">10x faster</span>
+                </div>
+            </h1>
+            <p class="cp-hero-sub">
+                Paste a link or drop a raw take, and ClipPulse clips, edits, sizes and publishes them to all social platforms in one click.
+            </p>
         </div>
         """,
         unsafe_allow_html=True,
