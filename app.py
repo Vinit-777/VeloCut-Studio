@@ -16,18 +16,24 @@ import plotly.graph_objects as go
 
 # Load local .env first, then safely read Streamlit Cloud Secrets without crashing locally
 load_dotenv()
+from yt_auth import (
+    resolve_cookies_path,
+    save_and_sanitize_cookies,
+    is_valid_cookie_file,
+    test_youtube_access,
+)
+
 try:
     if "GROQ_API_KEY" in st.secrets:
         os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
     if "YOUTUBE_COOKIES" in st.secrets:
-        Path("cookies.txt").write_text(st.secrets["YOUTUBE_COOKIES"], encoding="utf-8")
+        save_and_sanitize_cookies(st.secrets["YOUTUBE_COOKIES"], Path("cookies.txt"))
 except Exception:
     pass
 
 for _dir in ("temp", "outputs", "assets", "assets/fonts", "assets/emojis", "assets/emojis_3d"):
     Path(_dir).mkdir(parents=True, exist_ok=True)
 
-from yt_auth import resolve_cookies_path, test_youtube_access
 from audio_ai import analyze_video
 from video_studio import (
     render_viral_reel,
@@ -794,7 +800,7 @@ with st.sidebar:
         st.rerun()
 
     cookies_cand = resolve_cookies_path()
-    has_cookies = cookies_cand.exists() and cookies_cand.stat().st_size > 100
+    has_cookies = cookies_cand is not None and cookies_cand.exists() and is_valid_cookie_file(cookies_cand)
     if has_cookies:
         st.markdown(
             f'<div style="font-size:0.75rem; color:#10B981; font-weight:600; margin-top:6px; margin-bottom:4px;">'
@@ -814,20 +820,24 @@ with st.sidebar:
         st.caption("When hosted on Streamlit Cloud, YouTube may require cookies to bypass datacenter IP blocks:")
         uploaded_cookie = st.file_uploader("Upload cookies.txt", type=["txt"], key="cookie_uploader")
         if uploaded_cookie is not None:
-            Path("cookies.txt").write_bytes(uploaded_cookie.getbuffer())
-            st.success("cookies.txt saved and activated!")
+            raw_text = uploaded_cookie.getvalue().decode("utf-8", errors="ignore")
+            saved = save_and_sanitize_cookies(raw_text, Path("cookies.txt"))
+            if saved:
+                st.success("cookies.txt sanitized & activated!")
+            else:
+                st.error("Uploaded file does not contain valid Netscape cookies.")
             st.rerun()
 
         pasted_cookies = st.text_area("Or Paste Cookie Content", placeholder="# Netscape HTTP Cookie File...", height=60, key="paste_cookie_box")
         c_btn1, c_btn2 = st.columns(2)
         with c_btn1:
             if st.button("Apply Cookies", use_container_width=True, key="btn_apply_cookie"):
-                if len(pasted_cookies.strip()) > 50:
-                    Path("cookies.txt").write_text(pasted_cookies.strip(), encoding="utf-8")
-                    st.success("Cookies applied!")
+                saved = save_and_sanitize_cookies(pasted_cookies, Path("cookies.txt"))
+                if saved:
+                    st.success("Cookies sanitized and applied!")
                     st.rerun()
                 else:
-                    st.warning("Paste valid cookie content.")
+                    st.error("Could not parse cookie content. Please paste raw Netscape cookies.")
         with c_btn2:
             if st.button("Test YouTube", use_container_width=True, key="btn_test_yt"):
                 ok, detail = test_youtube_access()
