@@ -141,7 +141,7 @@ def _find_js_runtime_args() -> List[str]:
 
 
 def ytdlp_base_cmd() -> List[str]:
-    """Build base yt-dlp command with JS runtime, Android/Web client bypass, and ONLY valid verified cookies."""
+    """Build base yt-dlp command with JS runtime, IPv4, socket timeout, and verified cookies."""
     cmd = [
         sys.executable, "-m", "yt_dlp",
         "--force-ipv4",
@@ -149,7 +149,6 @@ def ytdlp_base_cmd() -> List[str]:
         "--retries", "5",
         "--sleep-requests", "0.4",
         "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "--extractor-args", "youtube:player_client=android,web;player_skip=configs",
         *_find_js_runtime_args(),
     ]
     cand = resolve_cookies_path()

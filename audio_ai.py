@@ -27,7 +27,7 @@ def ytdlp_base_cmd() -> List[str]:
             sys.executable, "-m", "yt_dlp",
             "--force-ipv4", "--socket-timeout", "30", "--retries", "5",
             "--sleep-requests", "0.4",
-            "--extractor-args", "youtube:player_client=android,web;player_skip=configs",
+            "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         ]
         for cand in (Path("cookies.txt"), Path("assets/cookies.txt")):
             if cand.exists() and cand.stat().st_size > 100:
@@ -547,15 +547,16 @@ def extract_compressed_audio(
         cap_s = int(max_scan_seconds or 180)
         raw_tmpl = str(Path(temp_dir) / f"{job_id}_raw.%(ext)s")
 
+        # Tier 1: Fast audio section download with flexible format (ba/b)
         cmd1 = [
             *ytdlp_base_cmd(),
             "--download-sections", f"*0-{cap_s}",
-            "-f", "bestaudio/best",
-            "--no-playlist", "--quiet", "--no-warnings",
+            "-f", "ba/b",
+            "--no-playlist", "--no-warnings",
             "-o", raw_tmpl,
             source,
         ]
-        res = subprocess.run(cmd1, capture_output=True, text=True)
+        res = subprocess.run(cmd1, capture_output=True, text=True, timeout=55)
         matches = [m for m in _glob.glob(str(Path(temp_dir) / f"{job_id}_raw.*")) if Path(m).stat().st_size > 2000]
 
         if res.returncode != 0 or not matches:
@@ -564,18 +565,43 @@ def extract_compressed_audio(
                     Path(old_f).unlink()
                 except OSError:
                     pass
+            # Tier 2: Flexible best stream (b/best)
             cmd2 = [
                 *ytdlp_base_cmd(),
-                "-f", "worstaudio[ext=m4a]/bestaudio[abr<=64]/bestaudio/best",
-                "--no-playlist", "--quiet", "--no-warnings",
+                "--download-sections", f"*0-{cap_s}",
+                "-f", "b/best",
+                "--no-playlist", "--no-warnings",
                 "-o", raw_tmpl,
                 source,
             ]
-            res = subprocess.run(cmd2, capture_output=True, text=True)
+            res = subprocess.run(cmd2, capture_output=True, text=True, timeout=55)
             matches = [m for m in _glob.glob(str(Path(temp_dir) / f"{job_id}_raw.*")) if Path(m).stat().st_size > 2000]
 
+        # Tier 3: Direct stream slice via FFmpeg if download-sections failed
         if not matches:
-            raise RuntimeError(f"yt-dlp audio fetch failed: {res.stderr.strip()}")
+            try:
+                g_cmd = [*ytdlp_base_cmd(), "--no-playlist", "-g", "-f", "ba/b", source]
+                g_res = subprocess.run(g_cmd, capture_output=True, text=True, timeout=20)
+                if g_res.returncode == 0 and g_res.stdout.strip():
+                    stream_u = g_res.stdout.strip().splitlines()[0].strip()
+                    direct_raw = str(Path(temp_dir) / f"{job_id}_raw.m4a")
+                    ff = [
+                        "ffmpeg", "-y", "-v", "error",
+                        "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "3",
+                        "-i", stream_u,
+                        "-t", f"{cap_s:.1f}",
+                        "-vn", "-c:a", "copy",
+                        direct_raw,
+                    ]
+                    f_res = subprocess.run(ff, capture_output=True, timeout=30)
+                    if f_res.returncode == 0 and Path(direct_raw).exists() and Path(direct_raw).stat().st_size > 2000:
+                        matches = [direct_raw]
+            except Exception:
+                pass
+
+        if not matches:
+            last_err = res.stderr.strip() if ("res" in locals() and res.stderr) else "Could not download audio stream"
+            raise RuntimeError(f"yt-dlp audio fetch failed: {last_err}")
         input_media = matches[0]
         source_type = "youtube_window"
     else:
