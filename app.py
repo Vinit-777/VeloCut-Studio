@@ -38,6 +38,17 @@ except Exception:
 for _dir in ("temp", "outputs", "assets", "assets/fonts", "assets/emojis", "assets/emojis_3d"):
     Path(_dir).mkdir(parents=True, exist_ok=True)
 
+import importlib
+import audio_ai
+import video_studio
+import yt_auth
+try:
+    importlib.reload(yt_auth)
+    importlib.reload(audio_ai)
+    importlib.reload(video_studio)
+except Exception:
+    pass
+
 from audio_ai import analyze_video
 from video_studio import (
     render_viral_reel,
@@ -1770,16 +1781,24 @@ with tab_studio:
             if not loaded_from_cache:
                 try:
                     with st.spinner("AI Director: Scanning video for highest-retention hooks and story arcs..."):
-                        result = analyze_video(
-                            source=source_to_run,
-                            video_type=video_type,
-                            clip_goal=clip_goal,
-                            fast_heatmap_mode=fast_heatmap_mode,
-                            num_clips=5,
-                            min_dur=min_dur,
-                            max_dur=max_dur,
-                            start_offset=active_offset,
-                        )
+                        analyze_kwargs = {
+                            "source": source_to_run,
+                            "video_type": video_type,
+                            "clip_goal": clip_goal,
+                            "fast_heatmap_mode": fast_heatmap_mode,
+                            "num_clips": 5,
+                            "min_dur": min_dur,
+                            "max_dur": max_dur,
+                            "start_offset": active_offset,
+                        }
+                        try:
+                            result = analyze_video(**analyze_kwargs)
+                        except TypeError as te:
+                            if "start_offset" in str(te):
+                                analyze_kwargs.pop("start_offset", None)
+                                result = analyze_video(**analyze_kwargs)
+                            else:
+                                raise
                     result = _ensure_fallback_clips(result, source_to_run, min_dur, max_dur, num_clips=3)
                     st.session_state.analysis = result
                     st.session_state.active_source = source_to_run

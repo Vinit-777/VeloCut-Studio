@@ -566,6 +566,7 @@ def extract_compressed_audio(
     max_scan_seconds: Optional[float] = None,
     job_id: Optional[str] = None,
     start_offset: float = 0.0,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     import glob as _glob
     Path(temp_dir).mkdir(parents=True, exist_ok=True)
@@ -1265,6 +1266,7 @@ def analyze_video(
     temp_dir: str = "temp",
     status_cb: Optional[Callable[[str], None]] = None,
     start_offset: float = 0.0,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     """
     Two high-speed Phase 1 pathways:

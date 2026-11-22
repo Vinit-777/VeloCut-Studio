@@ -1774,6 +1774,7 @@ def render_viral_reel(
     assets_dir: str = "assets",
     status_cb: Optional[Callable[[str], None]] = None,
     progress_cb: Optional[Callable[[float, str], None]] = None,
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     def log(msg: str):
         if status_cb:
