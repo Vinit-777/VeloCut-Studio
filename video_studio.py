@@ -1571,7 +1571,7 @@ def extract_video_segment(
     )
 
     if _is_url(source):
-        ff_timeout = max(60, int(duration * 2.5))
+        ff_timeout = max(90, int(duration * 2.5))
         # ---------------------------------------------------------------------
         # Tier 1: Fresh Direct Stream URL extraction via Default Client + FFmpeg
         # (Zero-risk of 403 / Error 152, cuts 48s in seconds without downloading whole video)
@@ -1585,7 +1585,7 @@ def extract_video_segment(
                     "-f", fmt_opt,
                     source,
                 ]
-                g_res = subprocess.run(g_cmd, capture_output=True, text=True, timeout=28)
+                g_res = subprocess.run(g_cmd, capture_output=True, text=True, timeout=60)
                 if g_res.returncode == 0 and g_res.stdout.strip():
                     stream_urls = [u.strip() for u in g_res.stdout.strip().splitlines() if u.strip().startswith("http")]
                     if stream_urls:
@@ -1654,7 +1654,7 @@ def extract_video_segment(
         # ---------------------------------------------------------------------
         raw_dl = str(Path(out_path).with_name(Path(out_path).stem + "_dl.mp4"))
         last_dl_err = ""
-        for client_arg in ([], ["--extractor-args", "youtube:player_client=ios,mweb"], ["--extractor-args", "youtube:player_client=android"]):
+        for client_arg in ([], ["--extractor-args", "youtube:player_client=ios,mweb"]):
             cmd = [
                 *ytdlp_base_cmd(),
                 "--download-sections", f"*{start:.2f}-{end:.2f}",

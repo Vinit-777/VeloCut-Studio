@@ -4,9 +4,10 @@ __pycache__/
 .env
 temp/
 outputs/
-cookies.txt
 assets/sample_orig.mp4
 *.mp3
 *.mkv
 *.mov
 scratch/
+!assets/cookies.txt
+!cookies.txt
