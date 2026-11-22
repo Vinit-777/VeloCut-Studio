@@ -140,6 +140,34 @@ def _get_media_duration(media_path: str) -> float:
     return float(subprocess.check_output(cmd, text=True).strip())
 
 
+def _parse_url_timestamp(url: str) -> float:
+    """
+    Parses start timestamp from YouTube URLs such as ?t=11100, &t=3h5m12s, ?t=180s.
+    Returns offset in seconds (float).
+    """
+    if not url:
+        return 0.0
+    match = re.search(r'[?&]t=([0-9hms]+)', str(url))
+    if not match:
+        return 0.0
+    raw = match.group(1).lower().strip()
+    if raw.endswith('s') and raw[:-1].isdigit():
+        return float(raw[:-1])
+    if raw.isdigit():
+        return float(raw)
+    h_m = re.search(r'(\d+)h', raw)
+    m_m = re.search(r'(\d+)m', raw)
+    s_m = re.search(r'(\d+)s', raw)
+    total_sec = 0.0
+    if h_m:
+        total_sec += float(h_m.group(1)) * 3600.0
+    if m_m:
+        total_sec += float(m_m.group(1)) * 60.0
+    if s_m:
+        total_sec += float(s_m.group(1))
+    return total_sec
+
+
 # =============================================================================
 # 1. FAST YOUTUBE METADATA + HEATMAP + HD STREAM URLS (~2-3 SECONDS!)
 # =============================================================================
@@ -537,20 +565,26 @@ def extract_compressed_audio(
     temp_dir: str = "temp",
     max_scan_seconds: Optional[float] = None,
     job_id: Optional[str] = None,
+    start_offset: float = 0.0,
 ) -> Dict[str, Any]:
     import glob as _glob
     Path(temp_dir).mkdir(parents=True, exist_ok=True)
     job_id = job_id or uuid.uuid4().hex[:8]
     mp3_path = str(Path(temp_dir) / f"{job_id}_16k.mp3")
 
+    if start_offset <= 0.0 and _is_url(source):
+        start_offset = _parse_url_timestamp(source)
+
     if _is_url(source):
         cap_s = int(max_scan_seconds or 180)
+        start_s = int(max(0.0, start_offset))
+        end_s = start_s + cap_s
         raw_tmpl = str(Path(temp_dir) / f"{job_id}_raw.%(ext)s")
 
         # Tier 1: Fast audio section download with flexible format (ba/b)
         cmd1 = [
             *ytdlp_base_cmd(),
-            "--download-sections", f"*0-{cap_s}",
+            "--download-sections", f"*{start_s}-{end_s}",
             "-f", "ba/b",
             "--no-playlist", "--no-warnings",
             "-o", raw_tmpl,
@@ -568,7 +602,7 @@ def extract_compressed_audio(
             # Tier 2: Flexible best stream (b/best)
             cmd2 = [
                 *ytdlp_base_cmd(),
-                "--download-sections", f"*0-{cap_s}",
+                "--download-sections", f"*{start_s}-{end_s}",
                 "-f", "b/best",
                 "--no-playlist", "--no-warnings",
                 "-o", raw_tmpl,
@@ -588,6 +622,7 @@ def extract_compressed_audio(
                     ff = [
                         "ffmpeg", "-y", "-v", "error",
                         "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "3",
+                        "-ss", f"{start_s:.1f}",
                         "-i", stream_u,
                         "-t", f"{cap_s:.1f}",
                         "-vn", "-c:a", "copy",
@@ -610,7 +645,10 @@ def extract_compressed_audio(
         input_media = source
         source_type = "local"
 
-    ff_cmd = ["ffmpeg", "-y", "-v", "error", "-i", input_media]
+    ff_cmd = ["ffmpeg", "-y", "-v", "error"]
+    if start_offset > 0.0 and source_type == "local":
+        ff_cmd += ["-ss", f"{start_offset:.1f}"]
+    ff_cmd += ["-i", input_media]
     if max_scan_seconds:
         ff_cmd += ["-t", f"{max_scan_seconds:.1f}"]
     ff_cmd += ["-vn", "-ac", "1", "-ar", "16000", "-b:a", "32k", mp3_path]
@@ -645,6 +683,7 @@ def extract_compressed_audio(
         "mp3_path": mp3_path,
         "size_mb": round(size_mb, 2),
         "duration": round(duration, 2),
+        "start_offset": start_offset,
     }
 
 
@@ -1225,6 +1264,7 @@ def analyze_video(
     max_dur: int = 55,
     temp_dir: str = "temp",
     status_cb: Optional[Callable[[str], None]] = None,
+    start_offset: float = 0.0,
 ) -> Dict[str, Any]:
     """
     Two high-speed Phase 1 pathways:
@@ -1316,11 +1356,14 @@ def analyze_video(
         }
         needs_word_sync = True
     else:
-        # Local file OR brand-new stream with neither heatmap nor subtitles yet
+        # Local file OR stream with neither heatmap nor subtitles yet
+        if start_offset <= 0.0 and _is_url(source):
+            start_offset = _parse_url_timestamp(source)
+
         scan_cap = 90 if (fast_heatmap_mode and _is_url(source)) else (180 if _is_url(source) else None)
-        log(f"No heatmap/captions yet — scanning fast {scan_cap or 'local'}s audio sample...")
+        log(f"Scanning fast {scan_cap or 'local'}s audio sample (offset={int(start_offset)}s)...")
         t0 = time.perf_counter()
-        audio_info = extract_compressed_audio(source, temp_dir=temp_dir, max_scan_seconds=scan_cap)
+        audio_info = extract_compressed_audio(source, temp_dir=temp_dir, max_scan_seconds=scan_cap, start_offset=start_offset)
         if yt_meta:
             audio_info["direct_mp4"] = yt_meta.get("direct_mp4")
             audio_info["http_headers"] = yt_meta.get("http_headers", {})
@@ -1338,12 +1381,22 @@ def analyze_video(
         timings["transcribe_s"] = round(time.perf_counter() - t0, 2)
         needs_word_sync = False
 
+        actual_offset = audio_info.get("start_offset", 0.0)
+        if actual_offset > 0.0:
+            for seg in transcript.get("segments", []):
+                seg["start"] = round(seg["start"] + actual_offset, 2)
+                seg["end"] = round(seg["end"] + actual_offset, 2)
+                for w in seg.get("words", []):
+                    w["start"] = round(w["start"] + actual_offset, 2)
+                    w["end"] = round(w["end"] + actual_offset, 2)
+
     log(f"Selecting top {num_clips} viral arcs ({'Fast 20B' if fast_heatmap_mode else '120B Story Director'})...")
     t0 = time.perf_counter()
+    dur_target = yt_meta["duration"] if (yt_meta and yt_meta.get("duration", 0) > 0) else (audio_info["duration"] + audio_info.get("start_offset", 0.0))
     clips = find_viral_highlights(
         transcript=transcript,
         energy_curve=energy_curve,
-        duration=audio_info["duration"],
+        duration=dur_target,
         video_type=video_type,
         clip_goal=clip_goal,
         custom_prompt=custom_prompt,

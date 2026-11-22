@@ -919,28 +919,59 @@ def _analyze_shots_and_framing(
         }
 
     if framing_mode == "gameplay_split":
-        # Fast Streamer Facecam Locator: samples up to 12 frames to lock on webcam box
+        # Robust Streamer Webcam Locator (Perimeter Quadrant Scan):
+        # Samples up to 16 frames strictly in the 4 perimeter webcam quadrants.
+        # Ignores central gameplay region (0.32 < x < 0.68) so game cutscenes, NPCs, and car passengers are NEVER mistaken for streamer!
         detector = _MultiFaceDetector(assets_dir=assets_dir)
-        cam_faces: List[Tuple[float, float]] = []
-        stride_gp = max(1, total_est // 12)
+        quadrants = {
+            "bottom_left":  (0.0, 0.28, 0.35, 0.95),
+            "bottom_right": (0.65, 0.28, 1.0, 0.95),
+            "top_left":     (0.0, 0.0, 0.35, 0.55),
+            "top_right":    (0.65, 0.0, 1.0, 0.55),
+        }
+        quad_detections: Dict[str, List[Tuple[float, float, float]]] = {k: [] for k in quadrants}
+        stride_gp = max(1, total_est // 16)
+
         for fi in range(0, total_est, stride_gp):
             cap.set(cv2.CAP_PROP_POS_FRAMES, fi)
             ret, f_test = cap.read()
             if not ret:
                 break
-            fcs = detector.detect_faces(f_test)
-            for fc in fcs:
-                cam_faces.append((fc[0], fc[1]))
+            fh, fw = f_test.shape[:2]
+            for q_name, (x1n, y1n, x2n, y2n) in quadrants.items():
+                qx1, qy1 = int(round(x1n * fw)), int(round(y1n * fh))
+                qx2, qy2 = int(round(x2n * fw)), int(round(y2n * fh))
+                q_crop = f_test[qy1:qy2, qx1:qx2]
+                fcs = detector.detect_faces(q_crop)
+                for fc in fcs:
+                    # Map normalized face coordinate inside crop back to full frame
+                    fx_full = (qx1 + fc[0] * (qx2 - qx1)) / float(fw)
+                    fy_full = (qy1 + fc[1] * (qy2 - qy1)) / float(fh)
+                    fw_full = fc[2] * (qx2 - qx1) / float(fw)
+                    quad_detections[q_name].append((fx_full, fy_full, fw_full))
+
         cap.release()
         detector.close()
 
-        if cam_faces:
-            cam_cx = float(np.median([cf[0] for cf in cam_faces]))
-            cam_cy = float(np.median([cf[1] for cf in cam_faces]))
+        # Find winning quadrant with consistent streamer webcam detections
+        best_quad = None
+        max_hits = 0
+        for q_name, dets in quad_detections.items():
+            if len(dets) > max_hits:
+                max_hits = len(dets)
+                best_quad = q_name
+
+        if best_quad and max_hits >= 2:
+            dets = quad_detections[best_quad]
+            cam_cx = float(np.median([d[0] for d in dets]))
+            cam_cy = float(np.median([d[1] for d in dets]))
+            cam_w = 0.21
+            print(f"[video_studio] Found streamer webcam in {best_quad} ({max_hits} hits): cx={cam_cx:.3f}, cy={cam_cy:.3f}, w={cam_w:.3f}")
         else:
-            # Default streamer webcam position (left-center, matching Kai Cenat and top streamers)
-            cam_cx, cam_cy = 0.08, 0.50
-        cam_w = 0.22
+            # Universal streamer webcam position: Bottom-Left (Kai Cenat, xQc, GTA V/VI & FPS streamers)
+            cam_cx, cam_cy = 0.09, 0.53
+            cam_w = 0.21
+            print(f"[video_studio] Defaulting to standard streamer webcam position (bottom-left): cx={cam_cx:.3f}, cy={cam_cy:.3f}, w={cam_w:.3f}")
 
         return {
             "fps": fps, "frames": total_est, "src_w": src_w, "src_h": src_h,
@@ -952,7 +983,7 @@ def _analyze_shots_and_framing(
             "right_x": np.full(total_est, 0.75), "right_y": np.full(total_est, 0.36), "right_fw": np.full(total_est, 0.14),
             "split_mid_x": np.full(total_est, 0.50),
             "cam_box": (cam_cx, cam_cy, cam_w),
-            "detector_engine": "streamer_cam_locator (gameplay_split)",
+            "detector_engine": f"quadrant_locator (best={best_quad or 'bottom_left'}, hits={max_hits})",
             "face_detection_rate": 100.0, "dual_split_pct": 100.0,
         }
 

@@ -1119,8 +1119,39 @@ def _ensure_fallback_clips(
     return result
 
 
-def _cache_path_for(source: str, video_type: str, clip_goal: str, fast_heatmap: bool, min_dur: int, max_dur: int) -> Path:
-    key_str = f"clippulse_v4|{source}|{video_type}|{clip_goal}|{fast_heatmap}|{min_dur}|{max_dur}"
+def _parse_time_str_to_seconds(time_str: str) -> float:
+    if not time_str or not str(time_str).strip():
+        return 0.0
+    s = str(time_str).strip().lower()
+    if ":" in s:
+        parts = s.split(":")
+        try:
+            if len(parts) == 3:
+                return float(parts[0]) * 3600.0 + float(parts[1]) * 60.0 + float(parts[2])
+            elif len(parts) == 2:
+                return float(parts[0]) * 60.0 + float(parts[1])
+        except ValueError:
+            pass
+    import re
+    match = re.search(r'[?&]t=([0-9hms]+)', s)
+    if match:
+        s = match.group(1)
+    if s.endswith('s') and s[:-1].isdigit():
+        return float(s[:-1])
+    if s.isdigit():
+        return float(s)
+    h_m = re.search(r'(\d+)h', s)
+    m_m = re.search(r'(\d+)m', s)
+    s_m = re.search(r'(\d+)s', s)
+    tot = 0.0
+    if h_m: tot += float(h_m.group(1)) * 3600.0
+    if m_m: tot += float(m_m.group(1)) * 60.0
+    if s_m: tot += float(s_m.group(1))
+    return tot
+
+
+def _cache_path_for(source: str, video_type: str, clip_goal: str, fast_heatmap: bool, min_dur: int, max_dur: int, start_offset: float = 0.0) -> Path:
+    key_str = f"clippulse_v4|{source}|{video_type}|{clip_goal}|{fast_heatmap}|{min_dur}|{max_dur}|{int(start_offset)}"
     digest = hashlib.md5(key_str.encode("utf-8")).hexdigest()[:12]
     return Path("temp") / f"analysis_cache_{digest}.json"
 
@@ -1555,6 +1586,22 @@ with tab_studio:
                     source_to_run = yt_url.strip()
                     trigger_analysis = True
 
+        o_col1, o_col2 = st.columns([3.0, 2.6])
+        with o_col1:
+            stream_offset_str = st.text_input(
+                "Stream Start Offset (Optional)",
+                placeholder="00:00:00 or e.g. 03:05:01 (Auto-detects ?t= from link)",
+                key="stream_offset_input",
+                help="For multi-hour livestreams (like Kai Cenat's 7.6-hour GTA 6 stream), enter a timestamp to jump past the intro directly to gameplay.",
+            )
+        with o_col2:
+            st.markdown(
+                '<div style="font-size:0.78rem; color:#8e9bbb; margin-top:0.4rem; line-height:1.35;">'
+                '🎮 <b>Livestream Tip:</b> Enter a timestamp or paste a link with <code>?t=3h5m</code> to clip from streamer gameplay directly.'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
     with in_tab_local:
         l_col1, l_col2 = st.columns([3.4, 1.6], vertical_alignment="bottom")
         with l_col1:
@@ -1705,7 +1752,9 @@ with tab_studio:
         )
 
         with live_work_slot:
-            cache_file = _cache_path_for(source_to_run, video_type, clip_goal, fast_heatmap_mode, min_dur, max_dur)
+            raw_offset = st.session_state.get("stream_offset_input", "")
+            active_offset = _parse_time_str_to_seconds(raw_offset) if raw_offset else _parse_time_str_to_seconds(source_to_run)
+            cache_file = _cache_path_for(source_to_run, video_type, clip_goal, fast_heatmap_mode, min_dur, max_dur, start_offset=active_offset)
             loaded_from_cache = False
 
             if cache_file.exists():
@@ -1729,6 +1778,7 @@ with tab_studio:
                             num_clips=5,
                             min_dur=min_dur,
                             max_dur=max_dur,
+                            start_offset=active_offset,
                         )
                     result = _ensure_fallback_clips(result, source_to_run, min_dur, max_dur, num_clips=3)
                     st.session_state.analysis = result
