@@ -1828,7 +1828,10 @@ with tab_studio:
                         cfg=render_cfg,
                     )
                 except Exception as e:
-                    st.error(f"Unable to render clip: {e}")
+                    err_msg = str(e)
+                    st.error(f"Unable to render clip: {err_msg}")
+                    if "403" in err_msg or "Forbidden" in err_msg or "YouTube" in err_msg:
+                        st.info("💡 **YouTube Cloud Tip**: If YouTube blocks the cloud server IP, paste your Netscape cookies in the sidebar under **'YouTube Cloud Cookies'** to bypass bot checks permanently.")
 
     # -------------------------------------------------------------------------
     # RESULTS WORKSPACE

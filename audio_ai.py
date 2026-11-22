@@ -23,7 +23,12 @@ def ytdlp_base_cmd() -> List[str]:
         from yt_auth import ytdlp_base_cmd as _auth_cmd
         return _auth_cmd()
     except Exception:
-        cmd = [sys.executable, "-m", "yt_dlp", "--sleep-requests", "0.4"]
+        cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--force-ipv4", "--socket-timeout", "30", "--retries", "5",
+            "--sleep-requests", "0.4",
+            "--extractor-args", "youtube:player_client=android,web;player_skip=configs",
+        ]
         for cand in (Path("cookies.txt"), Path("assets/cookies.txt")):
             if cand.exists() and cand.stat().st_size > 100:
                 cmd += ["--cookies", str(cand.resolve())]

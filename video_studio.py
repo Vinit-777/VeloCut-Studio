@@ -1565,18 +1565,76 @@ def extract_video_segment(
     import glob as _glob
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     duration = max(1.0, end - start)
+    ua = (http_headers or {}).get(
+        "User-Agent",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    )
 
     if _is_url(source):
+        # ---------------------------------------------------------------------
+        # Tier 1: Fresh Direct Stream URL extraction via Android/Web Client + FFmpeg
+        # (Zero-risk of 403 Forbidden, no multi-gigabyte video download, ~2.5s)
+        # ---------------------------------------------------------------------
+        for client_tag in ("android,web", "android", "ios,mweb", "web_embedded,web"):
+            try:
+                g_cmd = [
+                    *ytdlp_base_cmd(),
+                    "--extractor-args", f"youtube:player_client={client_tag};player_skip=configs",
+                    "--no-playlist", "--quiet", "--no-warnings",
+                    "-g",
+                    "-f", "bestvideo[height<=720]+bestaudio/best[height<=720]/best",
+                    source,
+                ]
+                g_res = subprocess.run(g_cmd, capture_output=True, text=True, timeout=20)
+                if g_res.returncode == 0 and g_res.stdout.strip():
+                    stream_urls = [u.strip() for u in g_res.stdout.strip().splitlines() if u.strip().startswith("http")]
+                    if stream_urls:
+                        if len(stream_urls) >= 2:
+                            ff_cmd = [
+                                "ffmpeg", "-y", "-v", "error",
+                                "-user_agent", ua,
+                                "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "3",
+                                "-ss", f"{start:.3f}", "-i", stream_urls[0],
+                                "-user_agent", ua,
+                                "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "3",
+                                "-ss", f"{start:.3f}", "-i", stream_urls[1],
+                                "-t", f"{duration:.3f}",
+                                "-map", "0:v:0", "-map", "1:a:0",
+                                "-c:v", "libx264", "-preset", "superfast", "-crf", "15", "-pix_fmt", "yuv420p",
+                                "-c:a", "aac", "-b:a", "192k",
+                                "-avoid_negative_ts", "make_zero",
+                                out_path,
+                            ]
+                        else:
+                            ff_cmd = [
+                                "ffmpeg", "-y", "-v", "error",
+                                "-user_agent", ua,
+                                "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "3",
+                                "-ss", f"{start:.3f}", "-i", stream_urls[0],
+                                "-t", f"{duration:.3f}",
+                                "-c:v", "libx264", "-preset", "superfast", "-crf", "15", "-pix_fmt", "yuv420p",
+                                "-c:a", "aac", "-b:a", "192k",
+                                "-avoid_negative_ts", "make_zero",
+                                out_path,
+                            ]
+                        ff_res = subprocess.run(ff_cmd, capture_output=True, timeout=35)
+                        if ff_res.returncode == 0 and Path(out_path).exists() and Path(out_path).stat().st_size > 25000:
+                            return out_path
+            except Exception:
+                pass
+
+        # ---------------------------------------------------------------------
+        # Tier 2: Existing direct_mp4 if valid
+        # ---------------------------------------------------------------------
         if isinstance(direct_mp4, dict) and direct_mp4.get("v") and direct_mp4.get("a"):
             try:
-                ua = (http_headers or {}).get("User-Agent", "Mozilla/5.0")
                 ff_fast = [
                     "ffmpeg", "-y", "-v", "error",
                     "-user_agent", ua,
-                    "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "2",
+                    "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "3",
                     "-ss", f"{start:.3f}", "-i", direct_mp4["v"],
                     "-user_agent", ua,
-                    "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "2",
+                    "-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "3",
                     "-ss", f"{start:.3f}", "-i", direct_mp4["a"],
                     "-t", f"{duration:.3f}",
                     "-map", "0:v:0", "-map", "1:a:0",
@@ -1585,91 +1643,60 @@ def extract_video_segment(
                     "-avoid_negative_ts", "make_zero",
                     out_path,
                 ]
-                res = subprocess.run(ff_fast, capture_output=True, timeout=24)
+                res = subprocess.run(ff_fast, capture_output=True, timeout=25)
                 if res.returncode == 0 and Path(out_path).exists() and Path(out_path).stat().st_size > 25000:
                     return out_path
             except Exception:
                 pass
 
+        # ---------------------------------------------------------------------
+        # Tier 3: yt-dlp --download-sections with multi-client fallbacks
+        # ---------------------------------------------------------------------
         raw_dl = str(Path(out_path).with_name(Path(out_path).stem + "_dl.mp4"))
-        fmt_sel = (
-            "bestvideo[height<=720][vcodec^=avc]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best"
-            if fast_stream_mode
-            else "bestvideo[height<=1080][height>=720][vcodec^=avc]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best"
-        )
-        cmd = [
-            *ytdlp_base_cmd(),
-            "--download-sections", f"*{start:.2f}-{end:.2f}",
-            "-f", fmt_sel,
-            "--concurrent-fragments", "4",
-            "--merge-output-format", "mp4",
-            "--no-playlist", "--quiet", "--no-warnings",
-            "-o", raw_dl,
-            source,
-        ]
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=85)
-        dl_matches = [
-            m for m in _glob.glob(str(Path(out_path).with_name(Path(out_path).stem + "_dl.*")))
-            if Path(m).stat().st_size > 20000
-        ]
-        if res.returncode == 0 and dl_matches:
-            raw_file = dl_matches[0]
-            subprocess.run(
-                [
-                    "ffmpeg", "-y", "-v", "error",
-                    "-i", raw_file,
-                    "-c:v", "libx264", "-preset", "superfast", "-crf", "15", "-pix_fmt", "yuv420p",
-                    "-c:a", "aac", "-b:a", "192k",
-                    "-avoid_negative_ts", "make_zero",
-                    out_path,
-                ],
-                check=True,
-            )
-            for m in dl_matches:
-                try:
-                    Path(m).unlink()
-                except OSError:
-                    pass
-            return out_path
+        last_dl_err = ""
+        for client_tag in ("android,web", "android", "ios,mweb", "web_embedded,web"):
+            cmd = [
+                *ytdlp_base_cmd(),
+                "--download-sections", f"*{start:.2f}-{end:.2f}",
+                "--extractor-args", f"youtube:player_client={client_tag};player_skip=configs",
+                "-f", "bestvideo[height<=720]+bestaudio/best[height<=720]/best",
+                "--concurrent-fragments", "4",
+                "--merge-output-format", "mp4",
+                "--no-playlist",
+                "-o", raw_dl,
+                source,
+            ]
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=75)
+            if res.stderr:
+                last_dl_err = res.stderr.strip()
+            dl_matches = [
+                m for m in _glob.glob(str(Path(out_path).with_name(Path(out_path).stem + "_dl.*")))
+                if Path(m).stat().st_size > 20000
+            ]
+            if res.returncode == 0 and dl_matches:
+                raw_file = dl_matches[0]
+                subprocess.run(
+                    [
+                        "ffmpeg", "-y", "-v", "error",
+                        "-i", raw_file,
+                        "-c:v", "libx264", "-preset", "superfast", "-crf", "15", "-pix_fmt", "yuv420p",
+                        "-c:a", "aac", "-b:a", "192k",
+                        "-avoid_negative_ts", "make_zero",
+                        out_path,
+                    ],
+                    check=True,
+                )
+                for m in dl_matches:
+                    try:
+                        Path(m).unlink()
+                    except OSError:
+                        pass
+                return out_path
 
-        full_tmpl = str(Path(out_path).with_name(Path(out_path).stem + "_full.%(ext)s"))
-        cmd3 = [
-            *ytdlp_base_cmd(),
-            "-f", "bestvideo[height<=720]+bestaudio/best[height<=720]/best",
-            "--max-filesize", "180M",
-            "--merge-output-format", "mp4",
-            "--no-playlist", "--quiet", "--no-warnings",
-            "-o", full_tmpl,
-            source,
-        ]
-        res3 = subprocess.run(cmd3, capture_output=True, text=True, timeout=110)
-        full_matches = [
-            m for m in _glob.glob(str(Path(out_path).with_name(Path(out_path).stem + "_full.*")))
-            if Path(m).stat().st_size > 25000
-        ]
-        if not full_matches:
-            raise RuntimeError(f"YouTube HD clip download failed: {(res3.stderr or res.stderr).strip()}")
-
-        full_file = full_matches[0]
-        subprocess.run(
-            [
-                "ffmpeg", "-y", "-v", "error",
-                "-ss", f"{start:.3f}",
-                "-i", full_file,
-                "-t", f"{duration:.3f}",
-                "-c:v", "libx264", "-preset", "superfast", "-crf", "15", "-pix_fmt", "yuv420p",
-                "-c:a", "aac", "-b:a", "192k",
-                "-avoid_negative_ts", "make_zero",
-                out_path,
-            ],
-            check=True,
+        raise RuntimeError(
+            f"YouTube HD clip download failed: {last_dl_err or 'HTTP Error 403: Forbidden (YouTube Cloud Check)'}. "
+            "Please paste your cookies in the sidebar under 'YouTube Cloud Cookies' or add YOUTUBE_COOKIES in Streamlit Secrets."
         )
-        for f in full_matches:
-            try:
-                Path(f).unlink()
-            except OSError:
-                pass
-        return out_path
 
     cmd = [
         "ffmpeg", "-y", "-v", "error",
