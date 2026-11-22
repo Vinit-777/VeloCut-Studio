@@ -918,6 +918,44 @@ def _analyze_shots_and_framing(
             "face_detection_rate": 100.0, "dual_split_pct": 0.0,
         }
 
+    if framing_mode == "gameplay_split":
+        # Fast Streamer Facecam Locator: samples up to 12 frames to lock on webcam box
+        detector = _MultiFaceDetector(assets_dir=assets_dir)
+        cam_faces: List[Tuple[float, float]] = []
+        stride_gp = max(1, total_est // 12)
+        for fi in range(0, total_est, stride_gp):
+            cap.set(cv2.CAP_PROP_POS_FRAMES, fi)
+            ret, f_test = cap.read()
+            if not ret:
+                break
+            fcs = detector.detect_faces(f_test)
+            for fc in fcs:
+                cam_faces.append((fc[0], fc[1]))
+        cap.release()
+        detector.close()
+
+        if cam_faces:
+            cam_cx = float(np.median([cf[0] for cf in cam_faces]))
+            cam_cy = float(np.median([cf[1] for cf in cam_faces]))
+        else:
+            # Default streamer webcam position (left-center, matching Kai Cenat and top streamers)
+            cam_cx, cam_cy = 0.08, 0.50
+        cam_w = 0.22
+
+        return {
+            "fps": fps, "frames": total_est, "src_w": src_w, "src_h": src_h,
+            "shots_detected": 1, "cut_frames": [],
+            "frame_modes": ["gameplay_split"] * total_est,
+            "single_bounds": ["full"] * total_est,
+            "single_x": np.full(total_est, 0.50), "single_y": np.full(total_est, 0.40), "single_fw": np.full(total_est, 0.16),
+            "left_x": np.full(total_est, 0.25), "left_y": np.full(total_est, 0.36), "left_fw": np.full(total_est, 0.14),
+            "right_x": np.full(total_est, 0.75), "right_y": np.full(total_est, 0.36), "right_fw": np.full(total_est, 0.14),
+            "split_mid_x": np.full(total_est, 0.50),
+            "cam_box": (cam_cx, cam_cy, cam_w),
+            "detector_engine": "streamer_cam_locator (gameplay_split)",
+            "face_detection_rate": 100.0, "dual_split_pct": 100.0,
+        }
+
     allow_podcast_split = framing_mode in ("dual_split", "podcast_auto")
     stride = max(1, int(round(fps / 4.0)))
     detector = _MultiFaceDetector(assets_dir=assets_dir)
@@ -1357,6 +1395,59 @@ def _render_streamer_split_frame(
     return canvas
 
 
+def _render_gameplay_split_frame(
+    frame: np.ndarray,
+    cam_box: Tuple[float, float, float],
+    accent_bgr: Tuple[int, int, int],
+    zoom: float = 1.0,
+    out_w: int = 720,
+    out_h: int = 1280,
+) -> np.ndarray:
+    """
+    Signature YouTube Gameplay to Clip layout (Reference 9:16 vertical short format):
+    - Top Section (~31.6% of height, e.g., 405px on 720x1280): Streamer Facecam in 16:9 ratio.
+    - Bottom Section (~68.4% of height, e.g., 875px on 720x1280): Centered gameplay action.
+    - Clean dark aesthetic divider at seam (y = top_h).
+    """
+    src_h, src_w = frame.shape[:2]
+    cam_cx, cam_cy, cam_w_norm = cam_box
+
+    # 16:9 top section for streamer facecam: out_w = 720 => top_h = 405 (approx 31.6% of 1280)
+    top_h = int(round(out_w / (16.0 / 9.0)))
+    bot_h = out_h - top_h
+
+    # Web camera box in source (16:9 aspect)
+    cam_crop_w = int(round(src_w * max(0.18, min(0.32, cam_w_norm if 0.15 <= cam_w_norm <= 0.35 else 0.22))))
+    cam_crop_h = int(round(cam_crop_w / (16.0 / 9.0)))
+    cam_crop_h = min(src_h, cam_crop_h)
+
+    cam_x1 = max(0, min(src_w - cam_crop_w, int(round(cam_cx * src_w - cam_crop_w / 2.0))))
+    cam_y1 = max(0, min(src_h - cam_crop_h, int(round(cam_cy * src_h - cam_crop_h * 0.45))))
+
+    webcam_crop = frame[cam_y1 : cam_y1 + cam_crop_h, cam_x1 : cam_x1 + cam_crop_w]
+    top_panel = _smart_resize(webcam_crop, (out_w, top_h))
+
+    # Bottom panel: Centered Gameplay
+    bot_aspect = out_w / float(bot_h)
+    gp_h = src_h
+    gp_w = int(round(gp_h * bot_aspect))
+    if gp_w > src_w:
+        gp_w = src_w
+        gp_h = min(src_h, int(round(gp_w / bot_aspect)))
+    gp_x1 = max(0, min(src_w - gp_w, (src_w - gp_w) // 2))
+    gp_y1 = max(0, min(src_h - gp_h, (src_h - gp_h) // 2))
+    gameplay_crop = frame[gp_y1 : gp_y1 + gp_h, gp_x1 : gp_x1 + gp_w]
+    bot_panel = _smart_resize(gameplay_crop, (out_w, bot_h))
+
+    canvas = np.empty((out_h, out_w, 3), dtype=np.uint8)
+    canvas[0:top_h, :] = top_panel
+    canvas[top_h:out_h, :] = bot_panel
+
+    # Dark aesthetic divider line at seam
+    canvas[top_h - 2 : top_h + 2, :] = [18, 22, 34]
+    return canvas
+
+
 def _render_horizontal_partition_frame(
     frame: np.ndarray,
     lx: float, ly: float, lfw: float,
@@ -1430,6 +1521,9 @@ def _render_mode_frame(
     if mode == "streamer_split":
         z = 1.0 + 0.035 * (0.5 - 0.5 * math.cos(t_sec * 0.8)) if dynamic_zoom else 1.0
         return _render_streamer_split_frame(src_frame, track["cam_box"], accent_bgr, zoom=z, out_w=out_w, out_h=out_h)
+
+    if mode == "gameplay_split":
+        return _render_gameplay_split_frame(src_frame, track["cam_box"], accent_bgr, zoom=1.0, out_w=out_w, out_h=out_h)
 
     if mode == "dual":
         return _render_horizontal_partition_frame(
@@ -1639,7 +1733,7 @@ def render_viral_reel(
     # User framing choice is strictly respected across all camera modes:
     is_still_static = (transition_style == "still_static")
     effective_framing = framing_mode
-    effective_zoom = False if (is_still_static or effective_framing in ("full_uncropped", "blurred_fill")) else dynamic_zoom
+    effective_zoom = False if (is_still_static or effective_framing in ("full_uncropped", "blurred_fill", "gameplay_split")) else dynamic_zoom
 
     seg_path = str(Path(temp_dir) / f"{Path(output_path).stem}_{uuid.uuid4().hex[:6]}_seg.mp4")
 
@@ -1971,9 +2065,18 @@ def render_viral_reel(
                     out_frame = _apply_zoom_and_blur(out_frame, zoom=1.0, blur_strength=0.32 * pre_outro_p)
                 out_frame = (out_frame.astype(np.float32) * (1.0 - 0.18 * pre_outro_p)).astype(np.uint8)
 
-            # Glassmorphic Hook Card cleanly ABOVE the video (y=160)
+            # Glassmorphic Hook Card cleanly positioned
             if hook_layer is not None and 0.05 <= t_sec <= hook_end_t:
-                if t_sec < 0.35:
+                if cur_mode == "gameplay_split":
+                    top_h = int(round(out_w / (16.0 / 9.0)))
+                    h_y = top_h
+                    if t_sec < 0.35:
+                        h_alpha = _ease_out_cubic((t_sec - 0.05) / 0.30)
+                    elif t_sec > hook_end_t - 0.35:
+                        h_alpha = _smootherstep((hook_end_t - t_sec) / 0.35)
+                    else:
+                        h_alpha = 1.0
+                elif t_sec < 0.35:
                     ease = _ease_out_cubic((t_sec - 0.05) / 0.30)
                     h_alpha = ease
                     h_y = 160 if is_still_static else int(115 + 45 * ease)
@@ -1994,7 +2097,10 @@ def render_viral_reel(
                     c_scale = 1.0
 
                 cap_opacity = 1.0 - pre_outro_p
-                if cur_mode == "streamer_split":
+                if cur_mode == "gameplay_split":
+                    top_h = int(round(out_w / (16.0 / 9.0)))
+                    cap_y = top_h + int(round(out_h * 0.085))
+                elif cur_mode == "streamer_split":
                     cap_y = int(round(out_h * 0.56))
                 elif cur_mode == "dual":
                     cap_y = out_h // 2

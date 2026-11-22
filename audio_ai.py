@@ -380,7 +380,7 @@ def _fetch_youtube_fast_metadata(
                     sub_url,
                     headers={"User-Agent": http_headers.get("User-Agent", "Mozilla/5.0")},
                 )
-                with urllib.request.urlopen(req, timeout=8.0) as resp:
+                with urllib.request.urlopen(req, timeout=25.0) as resp:
                     raw_bytes = resp.read()
                 segments = _parse_json3_bytes(raw_bytes) if sub_ext == "json3" else _parse_vtt_bytes(raw_bytes)
             except Exception:

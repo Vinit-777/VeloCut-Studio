@@ -1136,7 +1136,9 @@ def _estimate_wait_range(
     avg_dur = (min_dur + max_dur) / 2.0
     eff = framing_mode
     base = 6 if fast_heatmap_mode else 10
-    cv = 0 if eff in ("full_uncropped", "wide_cinematic", "blurred_fill") else int(round(avg_dur * 0.05))
+    cv = 0 if eff in ("full_uncropped", "wide_cinematic", "blurred_fill") else (
+        1 if eff == "gameplay_split" else int(round(avg_dur * 0.05))
+    )
     enc = max(4, int(round(avg_dur * (0.10 if nvenc_ok else 0.24))))
     mid = base + cv + enc
     return max(8, mid - 3), mid + 5
@@ -1585,6 +1587,7 @@ with tab_studio:
     q1, q2, q3 = st.columns(3)
 
     video_type_map = {
+        "YouTube Gameplay to Clip (Facecam Top + Gameplay Bottom)": ("gaming", "gameplay_split"),
         "Fit Whole Video (Aesthetic Blurred Canvas)": ("full_video", "blurred_fill"),
         "Fit Whole Video (Studio Uncropped Frame)": ("full_video", "full_uncropped"),
         "Auto Vertical Face Tracking (Smart 9:16)": ("informational", "full_fill"),
@@ -1617,13 +1620,14 @@ with tab_studio:
 
     fast_heatmap_mode = st.toggle(
         "Fast Stream Heatmap Mode (extract directly from YouTube viewer replay spikes)",
-        value=(video_type == "gaming"),
+        value=(video_type == "gaming" or default_framing == "gameplay_split"),
     )
 
     with st.sidebar:
         st.markdown('<div class="side-section">Layout Override</div>', unsafe_allow_html=True)
         framing_override_map = {
             "Match Selected Format": default_framing,
+            "YouTube Gameplay to Clip (Facecam Top + Gameplay Bottom)": "gameplay_split",
             "Fit Whole Video (Aesthetic Blurred Canvas)": "blurred_fill",
             "Fit Whole Video (Studio Uncropped Frame)": "full_uncropped",
             "Auto Vertical Face Tracking (Smart 9:16)": "full_fill",
@@ -2238,7 +2242,7 @@ with tab_features:
             <div class="cp-feat-card">
                 <div class="cp-feat-icon">📐</div>
                 <div class="cp-feat-title">AI Reframe & Canvas <span class="cp-badge-active">ACTIVE</span></div>
-                <div class="cp-feat-desc">5 layout modes: Fit Whole Video with Aesthetic Blur, Studio Uncropped, OpenCV Face Tracking, Screen+Facecam Split, and Podcast Auto.</div>
+                <div class="cp-feat-desc">6 layout modes: YouTube Gameplay to Clip (Streamer Facecam Top + Centered Gameplay Bottom), Fit Whole Video with Aesthetic Blur, Studio Uncropped, OpenCV Face Tracking, Screen+Facecam Split, and Podcast Auto.</div>
             </div>
             <div class="cp-feat-card">
                 <div class="cp-feat-icon">💬</div>
